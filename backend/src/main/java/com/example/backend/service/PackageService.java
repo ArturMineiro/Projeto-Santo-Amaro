@@ -17,9 +17,9 @@ public class PackageService {
     @Autowired
     private MembershipRepository membershipRepository;
 
-    public List<PackageEntity> list(User user) {
+    public List<PackageEntity> list(UserEntity user) {
 
-        Membership membership = membershipRepository
+        MembershipEntity membership = membershipRepository
                 .findTopByUserIdOrderByIdDesc(user.getId())
                 .orElseThrow();
 
@@ -33,15 +33,15 @@ public class PackageService {
                 membership.getAssociation().getId());
     }
 
-    public PackageEntity create(User user, Long residentId, String description, String trackingCode) {
+    public PackageEntity create(UserEntity user, Long residentId, String description, String trackingCode) {
 
-        Membership membership = membershipRepository
+        MembershipEntity membership = membershipRepository
                 .findTopByUserIdOrderByIdDesc(user.getId())
                 .orElseThrow();
 
         PackageEntity pkg = new PackageEntity();
         pkg.setAssociation(membership.getAssociation());
-        pkg.setResident(new User(residentId));
+        pkg.setResident(new UserEntity(residentId));
         pkg.setReceiver(user);
         pkg.setDescription(description);
         pkg.setTrackingCode(trackingCode);

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
-public class User {
+public class UserEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,10 +41,10 @@ public class User {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public User() {
+    public UserEntity() {
     }
 
-    public User(Long id) {
+    public UserEntity(Long id) {
         this.id = id;
     }
 

@@ -1,8 +1,12 @@
 package com.example.backend.service;
 
-import com.example.backend.dto.RegisterRequest;
-import com.example.backend.entity.Membership;
-import com.example.backend.entity.User;
+import com.example.backend.dto.LoginRequestDTO;
+import com.example.backend.dto.LoginResponseDTO;
+import com.example.backend.dto.MeResponseDTO;
+import com.example.backend.dto.RegisterRequestDTO;
+import com.example.backend.dto.UserResponseDTO;
+import com.example.backend.entity.MembershipEntity;
+import com.example.backend.entity.UserEntity;
 import com.example.backend.repository.MembershipRepository;
 import com.example.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +28,7 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public Map<String, Object> register(RegisterRequest request) {
+    public Map<String, Object> register(RegisterRequestDTO request) {
 
         if (!request.getPassword().equals(request.getPassword_confirmation())) {
             throw new RuntimeException("As senhas não coincidem");
@@ -34,7 +38,7 @@ public class AuthService {
             throw new RuntimeException("Já existe um usuário com esse email");
         }
 
-        User user = new User();
+        UserEntity user = new UserEntity();
         user.setName(request.getName());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
@@ -46,16 +50,16 @@ public class AuthService {
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("message", "Usuário criado com sucesso");
-        response.put("user", user);
+        response.put("user", toUserResponse(user));
 
         return response;
     }
 
-    public Map<String, Object> login(String email, String password) {
-        User user = userRepository.findByEmail(email)
+    public LoginResponseDTO login(LoginRequestDTO request) {
+        UserEntity user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Credenciais inválidas"));
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("Credenciais inválidas");
         }
 
@@ -63,26 +67,33 @@ public class AuthService {
             throw new RuntimeException("Usuário inativo");
         }
 
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("token", "TOKEN_FAKE");
-        response.put("user", user);
-
-        return response;
+        return new LoginResponseDTO("TOKEN_FAKE", toUserResponse(user));
     }
 
-    public Map<String, Object> me(Long userId) {
-        User user = userRepository.findById(userId)
+    public MeResponseDTO me(Long userId) {
+        UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        Membership membership = membershipRepository
+        MembershipEntity membership = membershipRepository
                 .findTopByUserIdOrderByIdDesc(user.getId())
                 .orElse(null);
 
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("user", user);
-        response.put("membership", membership);
-        response.put("association", membership != null ? membership.getAssociation() : null);
+        return new MeResponseDTO(
+                toUserResponse(user),
+                membership,
+                membership != null ? membership.getAssociation() : null);
+    }
 
-        return response;
+    private UserResponseDTO toUserResponse(UserEntity user) {
+        UserResponseDTO dto = new UserResponseDTO();
+        dto.setId(user.getId());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setPhone(user.getPhone());
+        dto.setRole(user.getRole());
+        dto.setIsActive(user.getIsActive());
+        dto.setCreatedAt(user.getCreatedAt());
+        dto.setUpdatedAt(user.getUpdatedAt());
+        return dto;
     }
 }

@@ -5,7 +5,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "associations")
-public class Association {
+public class AssociationEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,7 +19,7 @@ public class Association {
     private Boolean isActive = true;
 
     @OneToMany(mappedBy = "association")
-    private List<Membership> memberships;
+    private List<MembershipEntity> memberships;
 
     @OneToMany(mappedBy = "association")
     private List<PackageEntity> packages;

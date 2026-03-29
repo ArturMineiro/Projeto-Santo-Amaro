@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "memberships")
-public class Membership {
+public class MembershipEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,11 +20,11 @@ public class Membership {
 
     @ManyToOne
     @JoinColumn(name = "association_id")
-    private Association association;
+    private AssociationEntity association;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private User user;
+    private UserEntity user;
 
     // ✅ GETTERS E SETTERS
 
@@ -64,19 +64,19 @@ public class Membership {
         this.rejectionReason = rejectionReason;
     }
 
-    public Association getAssociation() {
+    public AssociationEntity getAssociation() {
         return association;
     }
 
-    public void setAssociation(Association association) {
+    public void setAssociation(AssociationEntity association) {
         this.association = association;
     }
 
-    public User getUser() {
+    public UserEntity getUser() {
         return user;
     }
 
-    public void setUser(User user) {
+    public void setUser(UserEntity user) {
         this.user = user;
     }
 }

@@ -1,7 +1,7 @@
 package com.example.backend.controller;
 
 import com.example.backend.entity.PackageEntity;
-import com.example.backend.entity.User;
+import com.example.backend.entity.UserEntity;
 import com.example.backend.service.PackageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +18,7 @@ public class PackageController {
 
     @GetMapping
     public List<PackageEntity> index() {
-        User fakeUser = new User();
+        UserEntity fakeUser = new UserEntity();
         fakeUser.setId(1L);
         fakeUser.setRole("admin");
 
@@ -28,7 +28,7 @@ public class PackageController {
     @PostMapping
     public PackageEntity store(@RequestBody Map<String, String> body) {
 
-        User fakeUser = new User();
+        UserEntity fakeUser = new UserEntity();
         fakeUser.setId(1L);
 
         return packageService.create(

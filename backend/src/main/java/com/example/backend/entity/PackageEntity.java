@@ -21,15 +21,15 @@ public class PackageEntity {
 
     @ManyToOne
     @JoinColumn(name = "association_id")
-    private Association association;
+    private AssociationEntity association;
 
     @ManyToOne
     @JoinColumn(name = "resident_id")
-    private User resident;
+    private UserEntity resident;
 
     @ManyToOne
     @JoinColumn(name = "received_by")
-    private User receiver;
+    private UserEntity receiver;
 
     // ✅ GETTERS E SETTERS
 
@@ -85,27 +85,27 @@ public class PackageEntity {
         this.pickedUpAt = pickedUpAt;
     }
 
-    public Association getAssociation() {
+    public AssociationEntity getAssociation() {
         return association;
     }
 
-    public void setAssociation(Association association) {
+    public void setAssociation(AssociationEntity association) {
         this.association = association;
     }
 
-    public User getResident() {
+    public UserEntity getResident() {
         return resident;
     }
 
-    public void setResident(User resident) {
+    public void setResident(UserEntity resident) {
         this.resident = resident;
     }
 
-    public User getReceiver() {
+    public UserEntity getReceiver() {
         return receiver;
     }
 
-    public void setReceiver(User receiver) {
+    public void setReceiver(UserEntity receiver) {
         this.receiver = receiver;
     }
 }

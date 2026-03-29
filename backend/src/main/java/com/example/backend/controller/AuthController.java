@@ -1,13 +1,14 @@
 package com.example.backend.controller;
 
-import com.example.backend.dto.RegisterRequest;
+import com.example.backend.dto.LoginRequestDTO;
+import com.example.backend.dto.LoginResponseDTO;
+import com.example.backend.dto.MeResponseDTO;
+import com.example.backend.dto.RegisterRequestDTO;
 import com.example.backend.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -17,21 +18,18 @@ public class AuthController {
         private AuthService authService;
 
         @PostMapping("/register")
-        public ResponseEntity<?> register(@RequestBody @Valid RegisterRequest request) {
+        public ResponseEntity<?> register(@RequestBody @Valid RegisterRequestDTO request) {
                 return ResponseEntity.status(HttpStatus.CREATED)
                                 .body(authService.register(request));
         }
 
         @PostMapping("/login")
-        public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
-                return ResponseEntity.ok(
-                                authService.login(
-                                                request.get("email"),
-                                                request.get("password")));
+        public ResponseEntity<LoginResponseDTO> login(@RequestBody @Valid LoginRequestDTO request) {
+                return ResponseEntity.ok(authService.login(request));
         }
 
         @GetMapping("/me/{userId}")
-        public ResponseEntity<?> me(@PathVariable Long userId) {
+        public ResponseEntity<MeResponseDTO> me(@PathVariable Long userId) {
                 return ResponseEntity.ok(authService.me(userId));
         }
 }
