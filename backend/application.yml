@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/associacao_saas
+    url: jdbc:postgresql://localhost:5432/associacao_santo_amaro
     username: postgres
     password: postgres
 
