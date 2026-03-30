@@ -2,13 +2,10 @@ package com.example.backend.dto;
 
 public class MeResponseDTO {
     private UserResponseDTO user;
-    private Object membership;
-    private Object association;
+    private MembershipResponseDTO membership;
+    private AssociationResponseDTO association;
 
-    public MeResponseDTO() {
-    }
-
-    public MeResponseDTO(UserResponseDTO user, Object membership, Object association) {
+    public MeResponseDTO(UserResponseDTO user, MembershipResponseDTO membership, AssociationResponseDTO association) {
         this.user = user;
         this.membership = membership;
         this.association = association;
@@ -18,23 +15,23 @@ public class MeResponseDTO {
         return user;
     }
 
-    public Object getMembership() {
-        return membership;
-    }
-
-    public Object getAssociation() {
-        return association;
-    }
-
     public void setUser(UserResponseDTO user) {
         this.user = user;
     }
 
-    public void setMembership(Object membership) {
+    public MembershipResponseDTO getMembership() {
+        return membership;
+    }
+
+    public void setMembership(MembershipResponseDTO membership) {
         this.membership = membership;
     }
 
-    public void setAssociation(Object association) {
+    public AssociationResponseDTO getAssociation() {
+        return association;
+    }
+
+    public void setAssociation(AssociationResponseDTO association) {
         this.association = association;
     }
 }

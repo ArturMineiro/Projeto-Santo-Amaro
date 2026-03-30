@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { me } from "../services/auth";
 import type { DashboardData } from "../interfaces/data-user";
+import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -180,6 +181,16 @@ export default function Dashboard() {
             )}
           </div>
         </div>
+        {user.role === "association_admin" && (
+          <div className="mt-4">
+            <Link
+              to="/admin/memberships"
+              className="inline-block px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 transition"
+            >
+              Gerenciar vínculos
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

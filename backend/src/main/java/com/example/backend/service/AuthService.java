@@ -1,10 +1,13 @@
 package com.example.backend.service;
 
+import com.example.backend.dto.AssociationResponseDTO;
 import com.example.backend.dto.LoginRequestDTO;
 import com.example.backend.dto.LoginResponseDTO;
 import com.example.backend.dto.MeResponseDTO;
+import com.example.backend.dto.MembershipResponseDTO;
 import com.example.backend.dto.RegisterRequestDTO;
 import com.example.backend.dto.UserResponseDTO;
+import com.example.backend.entity.AssociationEntity;
 import com.example.backend.entity.MembershipEntity;
 import com.example.backend.entity.UserEntity;
 import com.example.backend.repository.MembershipRepository;
@@ -78,10 +81,15 @@ public class AuthService {
                 .findTopByUserIdOrderByIdDesc(user.getId())
                 .orElse(null);
 
+        MembershipResponseDTO membershipDto = membership != null ? toMembershipResponse(membership) : null;
+        AssociationResponseDTO associationDto = membership != null && membership.getAssociation() != null
+                ? toAssociationResponse(membership.getAssociation())
+                : null;
+
         return new MeResponseDTO(
                 toUserResponse(user),
-                membership,
-                membership != null ? membership.getAssociation() : null);
+                membershipDto,
+                associationDto);
     }
 
     private UserResponseDTO toUserResponse(UserEntity user) {
@@ -94,6 +102,36 @@ public class AuthService {
         dto.setIsActive(user.getIsActive());
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
+        return dto;
+    }
+
+    private MembershipResponseDTO toMembershipResponse(MembershipEntity membership) {
+        MembershipResponseDTO dto = new MembershipResponseDTO();
+        dto.setId(membership.getId());
+        dto.setStatus(membership.getStatus());
+        dto.setApprovedAt(
+                membership.getApprovedAt() != null ? membership.getApprovedAt().toString() : null);
+        dto.setRejectionReason(membership.getRejectionReason());
+
+        if (membership.getUser() != null) {
+            dto.setUserId(membership.getUser().getId());
+            dto.setUserName(membership.getUser().getName());
+            dto.setUserEmail(membership.getUser().getEmail());
+        }
+
+        if (membership.getAssociation() != null) {
+            dto.setAssociationId(membership.getAssociation().getId());
+            dto.setAssociationName(membership.getAssociation().getName());
+        }
+
+        return dto;
+    }
+
+    private AssociationResponseDTO toAssociationResponse(AssociationEntity association) {
+        AssociationResponseDTO dto = new AssociationResponseDTO();
+        dto.setId(association.getId());
+        dto.setName(association.getName());
+        dto.setSlug(association.getSlug());
         return dto;
     }
 }
