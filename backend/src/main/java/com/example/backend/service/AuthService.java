@@ -4,14 +4,9 @@ import com.example.backend.dto.AssociationResponseDTO;
 import com.example.backend.dto.LoginRequestDTO;
 import com.example.backend.dto.LoginResponseDTO;
 import com.example.backend.dto.MeResponseDTO;
-import com.example.backend.dto.MembershipResponseDTO;
 import com.example.backend.dto.RegisterRequestDTO;
-import com.example.backend.dto.UserResponseDTO;
 import com.example.backend.entity.AssociationEntity;
-import com.example.backend.entity.MembershipEntity;
-import com.example.backend.entity.UserEntity;
-import com.example.backend.repository.MembershipRepository;
-import com.example.backend.repository.UserRepository;
+import com.example.backend.repository.AssociationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,115 +18,86 @@ import java.util.Map;
 public class AuthService {
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private MembershipRepository membershipRepository;
+    private AssociationRepository associationRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
     public Map<String, Object> register(RegisterRequestDTO request) {
 
-        if (!request.getPassword().equals(request.getPassword_confirmation())) {
+        if (!request.getPassword().equals(request.getPasswordConfirmation())) {
             throw new RuntimeException("As senhas não coincidem");
         }
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Já existe um usuário com esse email");
+        if (associationRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("Já existe uma associação com esse email");
         }
 
-        UserEntity user = new UserEntity();
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setPhone(request.getPhone());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole("association_admin");
-        user.setIsActive(true);
+        AssociationEntity association = new AssociationEntity();
+        association.setName(request.getName());
+        association.setDocumentNumber(request.getDocumentNumber());
+        association.setEmail(request.getEmail());
+        association.setPhone(request.getPhone());
+        association.setPassword(passwordEncoder.encode(request.getPassword()));
+        association.setZipCode(request.getZipCode());
+        association.setStreet(request.getStreet());
+        association.setNumber(request.getNumber());
+        association.setComplement(request.getComplement());
+        association.setNeighborhood(request.getNeighborhood());
+        association.setCity(request.getCity());
+        association.setState(request.getState());
+        association.setApprovalStatus("pending");
+        association.setIsActive(true);
 
-        userRepository.save(user);
+        associationRepository.save(association);
 
         Map<String, Object> response = new LinkedHashMap<>();
-        response.put("message", "Usuário criado com sucesso");
-        response.put("user", toUserResponse(user));
+        response.put("message", "Associação cadastrada com sucesso");
+        response.put("association", toAssociationResponse(association));
 
         return response;
     }
 
     public LoginResponseDTO login(LoginRequestDTO request) {
-        UserEntity user = userRepository.findByEmail(request.getEmail())
+        AssociationEntity association = associationRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Credenciais inválidas"));
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), association.getPassword())) {
             throw new RuntimeException("Credenciais inválidas");
         }
 
-        if (!Boolean.TRUE.equals(user.getIsActive())) {
-            throw new RuntimeException("Usuário inativo");
+        if (!Boolean.TRUE.equals(association.getIsActive())) {
+            throw new RuntimeException("Associação inativa");
         }
 
-        return new LoginResponseDTO("TOKEN_FAKE", toUserResponse(user));
+        return new LoginResponseDTO("TOKEN_FAKE", toAssociationResponse(association));
     }
 
-    public MeResponseDTO me(Long userId) {
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+    public MeResponseDTO me(Long associationId) {
+        AssociationEntity association = associationRepository.findById(associationId)
+                .orElseThrow(() -> new RuntimeException("Associação não encontrada"));
 
-        MembershipEntity membership = membershipRepository
-                .findTopByUserIdOrderByIdDesc(user.getId())
-                .orElse(null);
-
-        MembershipResponseDTO membershipDto = membership != null ? toMembershipResponse(membership) : null;
-        AssociationResponseDTO associationDto = membership != null && membership.getAssociation() != null
-                ? toAssociationResponse(membership.getAssociation())
-                : null;
-
-        return new MeResponseDTO(
-                toUserResponse(user),
-                membershipDto,
-                associationDto);
-    }
-
-    private UserResponseDTO toUserResponse(UserEntity user) {
-        UserResponseDTO dto = new UserResponseDTO();
-        dto.setId(user.getId());
-        dto.setName(user.getName());
-        dto.setEmail(user.getEmail());
-        dto.setPhone(user.getPhone());
-        dto.setRole(user.getRole());
-        dto.setIsActive(user.getIsActive());
-        dto.setCreatedAt(user.getCreatedAt());
-        dto.setUpdatedAt(user.getUpdatedAt());
-        return dto;
-    }
-
-    private MembershipResponseDTO toMembershipResponse(MembershipEntity membership) {
-        MembershipResponseDTO dto = new MembershipResponseDTO();
-        dto.setId(membership.getId());
-        dto.setStatus(membership.getStatus());
-        dto.setApprovedAt(
-                membership.getApprovedAt() != null ? membership.getApprovedAt().toString() : null);
-        dto.setRejectionReason(membership.getRejectionReason());
-
-        if (membership.getUser() != null) {
-            dto.setUserId(membership.getUser().getId());
-            dto.setUserName(membership.getUser().getName());
-            dto.setUserEmail(membership.getUser().getEmail());
-        }
-
-        if (membership.getAssociation() != null) {
-            dto.setAssociationId(membership.getAssociation().getId());
-            dto.setAssociationName(membership.getAssociation().getName());
-        }
-
-        return dto;
+        return new MeResponseDTO(toAssociationResponse(association));
     }
 
     private AssociationResponseDTO toAssociationResponse(AssociationEntity association) {
         AssociationResponseDTO dto = new AssociationResponseDTO();
         dto.setId(association.getId());
         dto.setName(association.getName());
-        dto.setSlug(association.getSlug());
+        dto.setDocumentNumber(association.getDocumentNumber());
+        dto.setEmail(association.getEmail());
+        dto.setPhone(association.getPhone());
+        dto.setZipCode(association.getZipCode());
+        dto.setStreet(association.getStreet());
+        dto.setNumber(association.getNumber());
+        dto.setComplement(association.getComplement());
+        dto.setNeighborhood(association.getNeighborhood());
+        dto.setCity(association.getCity());
+        dto.setState(association.getState());
+        dto.setApprovalStatus(association.getApprovalStatus());
+        dto.setIsActive(association.getIsActive());
+        dto.setCreatedAt(association.getCreatedAt());
+        dto.setUpdatedAt(association.getUpdatedAt());
         return dto;
     }
 }

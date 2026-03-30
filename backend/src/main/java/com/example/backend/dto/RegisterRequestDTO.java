@@ -6,8 +6,11 @@ import jakarta.validation.constraints.Size;
 
 public class RegisterRequestDTO {
 
-    @NotBlank(message = "Nome é obrigatório")
+    @NotBlank(message = "Nome da associação é obrigatório")
     private String name;
+
+    @NotBlank(message = "Documento é obrigatório")
+    private String documentNumber;
 
     @NotBlank(message = "Email é obrigatório")
     @Email(message = "Email inválido")
@@ -21,13 +24,34 @@ public class RegisterRequestDTO {
     private String password;
 
     @NotBlank(message = "Confirmação de senha é obrigatória")
-    private String password_confirmation;
+    private String passwordConfirmation;
 
-    @NotBlank(message = "Nome da associação é obrigatório")
-    private String association_name;
+    @NotBlank(message = "CEP é obrigatório")
+    private String zipCode;
+
+    @NotBlank(message = "Rua é obrigatória")
+    private String street;
+
+    @NotBlank(message = "Número é obrigatório")
+    private String number;
+
+    private String complement;
+
+    @NotBlank(message = "Bairro é obrigatório")
+    private String neighborhood;
+
+    @NotBlank(message = "Cidade é obrigatória")
+    private String city;
+
+    @NotBlank(message = "Estado é obrigatório")
+    private String state;
 
     public String getName() {
         return name;
+    }
+
+    public String getDocumentNumber() {
+        return documentNumber;
     }
 
     public String getEmail() {
@@ -42,16 +66,44 @@ public class RegisterRequestDTO {
         return password;
     }
 
-    public String getPassword_confirmation() {
-        return password_confirmation;
+    public String getPasswordConfirmation() {
+        return passwordConfirmation;
     }
 
-    public String getAssociation_name() {
-        return association_name;
+    public String getZipCode() {
+        return zipCode;
+    }
+
+    public String getStreet() {
+        return street;
+    }
+
+    public String getNumber() {
+        return number;
+    }
+
+    public String getComplement() {
+        return complement;
+    }
+
+    public String getNeighborhood() {
+        return neighborhood;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public String getState() {
+        return state;
     }
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setDocumentNumber(String documentNumber) {
+        this.documentNumber = documentNumber;
     }
 
     public void setEmail(String email) {
@@ -66,11 +118,35 @@ public class RegisterRequestDTO {
         this.password = password;
     }
 
-    public void setPassword_confirmation(String password_confirmation) {
-        this.password_confirmation = password_confirmation;
+    public void setPasswordConfirmation(String passwordConfirmation) {
+        this.passwordConfirmation = passwordConfirmation;
     }
 
-    public void setAssociation_name(String association_name) {
-        this.association_name = association_name;
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
+    }
+
+    public void setStreet(String street) {
+        this.street = street;
+    }
+
+    public void setNumber(String number) {
+        this.number = number;
+    }
+
+    public void setComplement(String complement) {
+        this.complement = complement;
+    }
+
+    public void setNeighborhood(String neighborhood) {
+        this.neighborhood = neighborhood;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }

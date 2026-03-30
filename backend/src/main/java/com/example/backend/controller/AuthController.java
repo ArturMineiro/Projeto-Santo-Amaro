@@ -28,8 +28,8 @@ public class AuthController {
                 return ResponseEntity.ok(authService.login(request));
         }
 
-        @GetMapping("/me/{userId}")
-        public ResponseEntity<MeResponseDTO> me(@PathVariable Long userId) {
-                return ResponseEntity.ok(authService.me(userId));
+        @GetMapping("/me/{associationId}")
+        public ResponseEntity<MeResponseDTO> me(@PathVariable Long associationId) {
+                return ResponseEntity.ok(authService.me(associationId));
         }
 }

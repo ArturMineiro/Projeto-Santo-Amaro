@@ -1,7 +1,10 @@
 package com.example.backend.service;
 
-import com.example.backend.entity.*;
-import com.example.backend.repository.*;
+import com.example.backend.entity.AssociationEntity;
+import com.example.backend.entity.PackageEntity;
+import com.example.backend.entity.ResidentEntity;
+import com.example.backend.repository.PackageRepository;
+import com.example.backend.repository.ResidentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,54 +18,55 @@ public class PackageService {
     private PackageRepository packageRepository;
 
     @Autowired
-    private MembershipRepository membershipRepository;
+    private ResidentRepository residentRepository;
 
-    public List<PackageEntity> list(UserEntity user) {
-
-        MembershipEntity membership = membershipRepository
-                .findTopByUserIdOrderByIdDesc(user.getId())
-                .orElseThrow();
-
-        if ("resident".equals(user.getRole())) {
-            return packageRepository.findByAssociationIdAndResidentId(
-                    membership.getAssociation().getId(),
-                    user.getId());
-        }
-
-        return packageRepository.findByAssociationId(
-                membership.getAssociation().getId());
+    public List<PackageEntity> list(AssociationEntity association) {
+        return packageRepository.findByAssociationId(association.getId());
     }
 
-    public PackageEntity create(UserEntity user, Long residentId, String description, String trackingCode) {
+    public List<PackageEntity> listByResident(AssociationEntity association, Long residentId) {
+        return packageRepository.findByAssociationIdAndResidentId(
+                association.getId(),
+                residentId);
+    }
 
-        MembershipEntity membership = membershipRepository
-                .findTopByUserIdOrderByIdDesc(user.getId())
-                .orElseThrow();
+    public PackageEntity create(
+            AssociationEntity association,
+            Long residentId,
+            String receivedBy,
+            String description,
+            String photo) {
+        ResidentEntity resident = residentRepository.findById(residentId)
+                .orElseThrow(() -> new RuntimeException("Morador não encontrado"));
+
+        if (!resident.getAssociation().getId().equals(association.getId())) {
+            throw new RuntimeException("Este morador não pertence a esta associação");
+        }
 
         PackageEntity pkg = new PackageEntity();
-        pkg.setAssociation(membership.getAssociation());
-        pkg.setResident(new UserEntity(residentId));
-        pkg.setReceiver(user);
+        pkg.setAssociation(association);
+        pkg.setResident(resident);
+        pkg.setReceivedBy(receivedBy);
         pkg.setDescription(description);
-        pkg.setTrackingCode(trackingCode);
-        pkg.setStatus("pending");
-        pkg.setArrivalDate(LocalDateTime.now());
+        pkg.setPhoto(photo);
+        pkg.setStatus("received");
+        pkg.setReceivedAt(LocalDateTime.now());
 
         return packageRepository.save(pkg);
     }
 
-    public PackageEntity updateStatus(Long id, String status) {
+    public PackageEntity updateStatus(AssociationEntity association, Long id, String status) {
+        PackageEntity pkg = packageRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Encomenda não encontrada"));
 
-        PackageEntity pkg = packageRepository.findById(id).orElseThrow();
+        if (!pkg.getAssociation().getId().equals(association.getId())) {
+            throw new RuntimeException("Esta encomenda não pertence a esta associação");
+        }
 
         pkg.setStatus(status);
 
-        if ("notified".equals(status)) {
-            pkg.setNotificationSentAt(LocalDateTime.now());
-        }
-
-        if ("picked_up".equals(status)) {
-            pkg.setPickedUpAt(LocalDateTime.now());
+        if ("delivered".equals(status)) {
+            pkg.setDeliveredAt(LocalDateTime.now());
         }
 
         return packageRepository.save(pkg);

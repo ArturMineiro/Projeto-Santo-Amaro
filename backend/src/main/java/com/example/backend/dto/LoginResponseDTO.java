@@ -2,29 +2,29 @@ package com.example.backend.dto;
 
 public class LoginResponseDTO {
     private String token;
-    private UserResponseDTO user;
+    private AssociationResponseDTO association;
 
     public LoginResponseDTO() {
     }
 
-    public LoginResponseDTO(String token, UserResponseDTO user) {
+    public LoginResponseDTO(String token, AssociationResponseDTO association) {
         this.token = token;
-        this.user = user;
+        this.association = association;
     }
 
     public String getToken() {
         return token;
     }
 
-    public UserResponseDTO getUser() {
-        return user;
+    public AssociationResponseDTO getAssociation() {
+        return association;
     }
 
     public void setToken(String token) {
         this.token = token;
     }
 
-    public void setUser(UserResponseDTO user) {
-        this.user = user;
+    public void setAssociation(AssociationResponseDTO association) {
+        this.association = association;
     }
 }

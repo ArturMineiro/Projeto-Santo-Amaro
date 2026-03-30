@@ -11,14 +11,14 @@ export default function Login() {
     password: "",
   });
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     try {
       const data = await login(form);
 
       localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", String(data.user.id));
+      localStorage.setItem("associationId", String(data.association.id));
 
       navigate("/dashboard");
     } catch (error) {
@@ -28,7 +28,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white">
+    <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white px-4">
       <div className="w-full max-w-md bg-zinc-800 rounded-2xl shadow-lg p-8">
         <h1 className="text-2xl font-semibold mb-6 text-center">
           Bem-vindo 👋
@@ -36,10 +36,12 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <input
+            type="email"
             className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
+            required
           />
 
           <input
@@ -48,6 +50,7 @@ export default function Login() {
             placeholder="Senha"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
+            required
           />
 
           <button

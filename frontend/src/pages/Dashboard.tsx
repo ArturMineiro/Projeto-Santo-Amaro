@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { me } from "../services/auth";
 import type { DashboardData } from "../interfaces/data-user";
-import { Link } from "react-router-dom";
 
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
@@ -19,8 +18,14 @@ export default function Dashboard() {
 
   function formatDate(date?: string | null) {
     if (!date) return "Não informado";
-
     return new Date(date).toLocaleString("pt-BR");
+  }
+
+  function translateStatus(status?: string) {
+    if (status === "pending") return "Pendente";
+    if (status === "approved") return "Aprovada";
+    if (status === "rejected") return "Rejeitada";
+    return "Não informado";
   }
 
   if (loading) {
@@ -31,7 +36,7 @@ export default function Dashboard() {
     );
   }
 
-  if (!data) {
+  if (!data?.association) {
     return (
       <div className="min-h-screen bg-zinc-900 text-white flex items-center justify-center px-4">
         <div className="w-full max-w-md bg-zinc-800 rounded-2xl shadow-lg p-8 text-center">
@@ -42,155 +47,119 @@ export default function Dashboard() {
     );
   }
 
-  const { user, membership, association } = data;
+  const { association } = data;
 
   return (
     <div className="min-h-screen bg-zinc-900 text-white px-4 py-8">
       <div className="max-w-5xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-zinc-400 mt-2">Bem-vindo, {user.name}.</p>
+          <p className="text-zinc-400 mt-2">Bem-vindo, {association.name}.</p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="bg-zinc-800 rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Dados do usuário</h2>
+        <div className="bg-zinc-800 rounded-2xl shadow-lg p-6">
+          <h2 className="text-xl font-semibold mb-4">Dados da associação</h2>
 
-            <div className="space-y-3 text-sm">
-              <div>
-                <span className="text-zinc-400">ID:</span>
-                <p className="text-white font-medium">{user.id}</p>
-              </div>
+          <div className="grid gap-4 md:grid-cols-2 text-sm">
+            <div>
+              <span className="text-zinc-400">ID:</span>
+              <p className="text-white font-medium">{association.id}</p>
+            </div>
 
-              <div>
-                <span className="text-zinc-400">Nome:</span>
-                <p className="text-white font-medium">{user.name}</p>
-              </div>
+            <div>
+              <span className="text-zinc-400">Nome:</span>
+              <p className="text-white font-medium">{association.name}</p>
+            </div>
 
-              <div>
-                <span className="text-zinc-400">Email:</span>
-                <p className="text-white font-medium">{user.email}</p>
-              </div>
+            <div>
+              <span className="text-zinc-400">CPF/CNPJ:</span>
+              <p className="text-white font-medium">
+                {association.documentNumber}
+              </p>
+            </div>
 
-              <div>
-                <span className="text-zinc-400">Telefone:</span>
-                <p className="text-white font-medium">{user.phone}</p>
-              </div>
+            <div>
+              <span className="text-zinc-400">Email:</span>
+              <p className="text-white font-medium">{association.email}</p>
+            </div>
 
-              <div>
-                <span className="text-zinc-400">Perfil:</span>
-                <p className="text-white font-medium">{user.role}</p>
-              </div>
+            <div>
+              <span className="text-zinc-400">Telefone:</span>
+              <p className="text-white font-medium">{association.phone}</p>
+            </div>
 
-              <div>
-                <span className="text-zinc-400">Status:</span>
-                <p
-                  className={`font-medium ${
-                    user.isActive ? "text-green-400" : "text-red-400"
-                  }`}
-                >
-                  {user.isActive ? "Ativo" : "Inativo"}
-                </p>
-              </div>
+            <div>
+              <span className="text-zinc-400">Status de aprovação:</span>
+              <p className="text-white font-medium">
+                {translateStatus(association.approvalStatus)}
+              </p>
+            </div>
 
-              <div>
-                <span className="text-zinc-400">Criado em:</span>
-                <p className="text-white font-medium">
-                  {formatDate(user.createdAt)}
-                </p>
-              </div>
+            <div>
+              <span className="text-zinc-400">Status da conta:</span>
+              <p
+                className={`font-medium ${
+                  association.isActive ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                {association.isActive ? "Ativa" : "Inativa"}
+              </p>
+            </div>
 
-              <div>
-                <span className="text-zinc-400">Atualizado em:</span>
-                <p className="text-white font-medium">
-                  {formatDate(user.updatedAt)}
-                </p>
-              </div>
+            <div>
+              <span className="text-zinc-400">CEP:</span>
+              <p className="text-white font-medium">{association.zipCode}</p>
+            </div>
+
+            <div>
+              <span className="text-zinc-400">Rua:</span>
+              <p className="text-white font-medium">{association.street}</p>
+            </div>
+
+            <div>
+              <span className="text-zinc-400">Número:</span>
+              <p className="text-white font-medium">{association.number}</p>
+            </div>
+
+            <div>
+              <span className="text-zinc-400">Complemento:</span>
+              <p className="text-white font-medium">
+                {association.complement || "Não informado"}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-zinc-400">Bairro:</span>
+              <p className="text-white font-medium">
+                {association.neighborhood}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-zinc-400">Cidade:</span>
+              <p className="text-white font-medium">{association.city}</p>
+            </div>
+
+            <div>
+              <span className="text-zinc-400">Estado:</span>
+              <p className="text-white font-medium">{association.state}</p>
+            </div>
+
+            <div>
+              <span className="text-zinc-400">Criada em:</span>
+              <p className="text-white font-medium">
+                {formatDate(association.createdAt)}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-zinc-400">Atualizada em:</span>
+              <p className="text-white font-medium">
+                {formatDate(association.updatedAt)}
+              </p>
             </div>
           </div>
-
-          <div className="bg-zinc-800 rounded-2xl shadow-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Associação</h2>
-
-            {association ? (
-              <div className="space-y-3 text-sm">
-                <div>
-                  <span className="text-zinc-400">ID:</span>
-                  <p className="text-white font-medium">{association.id}</p>
-                </div>
-
-                <div>
-                  <span className="text-zinc-400">Nome:</span>
-                  <p className="text-white font-medium">{association.name}</p>
-                </div>
-
-                <div>
-                  <span className="text-zinc-400">Slug:</span>
-                  <p className="text-white font-medium">
-                    {association.slug || "Não informado"}
-                  </p>
-                </div>
-
-                <div>
-                  <span className="text-zinc-400">Criada em:</span>
-                  <p className="text-white font-medium">
-                    {formatDate(association.createdAt)}
-                  </p>
-                </div>
-
-                <div>
-                  <span className="text-zinc-400">Atualizada em:</span>
-                  <p className="text-white font-medium">
-                    {formatDate(association.updatedAt)}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-zinc-400">
-                Nenhuma associação vinculada no momento.
-              </p>
-            )}
-          </div>
-
-          <div className="bg-zinc-800 rounded-2xl shadow-lg p-6 md:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Vínculo do usuário</h2>
-
-            {membership ? (
-              <div className="grid gap-4 md:grid-cols-3 text-sm">
-                <div>
-                  <span className="text-zinc-400">ID do vínculo:</span>
-                  <p className="text-white font-medium">{membership.id}</p>
-                </div>
-
-                <div>
-                  <span className="text-zinc-400">Status:</span>
-                  <p className="text-white font-medium">{membership.status}</p>
-                </div>
-
-                <div>
-                  <span className="text-zinc-400">Aprovado em:</span>
-                  <p className="text-white font-medium">
-                    {formatDate(membership.approvedAt)}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-zinc-400">
-                Este usuário ainda não possui vínculo com uma associação.
-              </p>
-            )}
-          </div>
         </div>
-        {user.role === "association_admin" && (
-          <div className="mt-4">
-            <Link
-              to="/admin/memberships"
-              className="inline-block px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 transition"
-            >
-              Gerenciar vínculos
-            </Link>
-          </div>
-        )}
       </div>
     </div>
   );

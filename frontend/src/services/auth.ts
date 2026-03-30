@@ -15,7 +15,7 @@ export async function registerAssociation(payload: RegisterAssociationPayload) {
 }
 
 export async function me() {
-  const userId = localStorage.getItem("userId");
-  const response = await api.get(`/auth/me/${userId}`);
+  const associationId = localStorage.getItem("associationId");
+  const response = await api.get(`/auth/me/${associationId}`);
   return response.data;
 }
