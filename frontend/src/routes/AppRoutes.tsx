@@ -13,10 +13,16 @@ import AssociationSettings from "../pages/admin/AssociationSettings";
 import NewPackage from "../pages/admin/NewPackage";
 import PackagesPage from "../pages/admin/PackagesPage";
 import ResidentsPage from "../pages/admin/ResidentsPage";
+import { SystemLayout } from "../components/system/common";
+import SystemAssociations from "../pages/system/SystemAssociations";
+import SystemHome from "../pages/system/SystemHome";
+import SystemLogs from "../pages/system/SystemLogs";
+import SystemMemberships from "../pages/system/SystemMemberships";
 
 /** Para onde a pessoa vai depois de entrar. */
 function useHomePath(): string {
-  const { membership } = useAuth();
+  const { membership, session } = useAuth();
+  if (session?.user.is_super_admin) return "/sistema";
   if (!membership || membership.status !== "approved") return "/aguardando";
   return membership.role === "admin" ? "/painel" : "/minhas";
 }
@@ -30,13 +36,14 @@ function GuestOnly() {
 }
 
 /** Exige login e, opcionalmente, vínculo aprovado / papel de admin. */
-function RequireAuth({ need }: { need: "any" | "member" | "admin" }) {
+function RequireAuth({ need }: { need: "any" | "member" | "admin" | "super" }) {
   const { session, membership } = useAuth();
   const home = useHomePath();
   if (session === undefined) return <FullPageSpinner />;
   if (!session) return <Navigate to="/" replace />;
 
   const approved = membership?.status === "approved";
+  if (need === "super" && !session.user.is_super_admin) return <Navigate to={home} replace />;
   if (need === "member" && !approved) return <Navigate to={home} replace />;
   if (need === "admin" && !(approved && membership?.role === "admin")) return <Navigate to={home} replace />;
 
@@ -78,6 +85,15 @@ export default function AppRoutes() {
             <Route path="encomendas" element={<PackagesPage />} />
             <Route path="moradores" element={<ResidentsPage />} />
             <Route path="associacao" element={<AssociationSettings />} />
+          </Route>
+        </Route>
+
+        <Route element={<RequireAuth need="super" />}>
+          <Route path="/sistema" element={<SystemLayout />}>
+            <Route index element={<SystemHome />} />
+            <Route path="associacoes" element={<SystemAssociations />} />
+            <Route path="vinculos" element={<SystemMemberships />} />
+            <Route path="logs" element={<SystemLogs />} />
           </Route>
         </Route>
 

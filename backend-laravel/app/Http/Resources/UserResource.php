@@ -21,6 +21,7 @@ class UserResource extends JsonResource
             'notify_whatsapp' => $this->notify_whatsapp,
             'notify_email' => $this->notify_email,
             'has_access' => $this->hasPassword(),
+            'is_super_admin' => (bool) $this->is_super_admin,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

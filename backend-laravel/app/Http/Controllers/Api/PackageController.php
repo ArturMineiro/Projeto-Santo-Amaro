@@ -9,6 +9,7 @@ use App\Models\Membership;
 use App\Models\Package;
 use App\Models\PackageNotification;
 use App\Services\PackageNotifier;
+use App\Support\Activity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -110,6 +111,7 @@ class PackageController extends Controller
         }
 
         $package = $package->fresh([...self::RELATIONS, 'notifications']);
+                Activity::record('package.created', "Encomenda registrada para {$package->resident->name} ({$package->typeLabel()})", $association, $package, ['carrier' => $package->carrier]);
         $notified = $package->notifications->contains('status', PackageNotification::STATUS_SENT);
 
         return response()->json([
@@ -174,6 +176,8 @@ class PackageController extends Controller
             'delivered_by' => $request->user()->id,
         ]);
 
+        $this->log($request, 'package.picked_up', 'Encomenda entregue', $package);
+
         return response()->json([
             'message' => 'Entrega confirmada.',
             'package' => new PackageResource($package->fresh(self::RELATIONS)),
@@ -192,6 +196,8 @@ class PackageController extends Controller
             'delivered_by' => null,
         ]);
 
+        $this->log($request, 'package.pickup_undone', 'Entrega desfeita', $package);
+
         return response()->json([
             'message' => 'Encomenda voltou para "aguardando retirada".',
             'package' => new PackageResource($package->fresh(self::RELATIONS)),
@@ -208,6 +214,7 @@ class PackageController extends Controller
         }
 
         SendPackageNotification::dispatch($package);
+        $this->log($request, 'package.notify_resent', 'Aviso reenviado', $package);
 
         return response()->json([
             'message' => 'Aviso reenviado.',
@@ -225,6 +232,7 @@ class PackageController extends Controller
         }
 
         $notifier->markManualWhatsApp($package);
+        $this->log($request, 'package.notified_manually', 'Aviso pelo WhatsApp da administração', $package);
 
         return response()->json([
             'message' => 'Aviso pelo WhatsApp registrado.',
@@ -235,9 +243,16 @@ class PackageController extends Controller
     public function destroy(Request $request, Package $package): JsonResponse
     {
         $this->authorizePackage($request, $package);
+        $this->log($request, 'package.deleted', "Registro apagado (código {$package->pickup_code})", $package);
         $package->delete();
 
         return response()->json(['message' => 'Registro apagado.']);
+    }
+
+    private function log(Request $request, string $action, string $text, Package $package): void
+    {
+        $package->loadMissing('resident');
+        Activity::record($action, "{$text}: {$package->resident?->name}", $this->association($request), $package);
     }
 
     private function authorizePackage(Request $request, Package $package): void

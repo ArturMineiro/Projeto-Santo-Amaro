@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../auth/authContext";
-import { IconBox, IconRefresh, IconShare, IconUser, IconWhatsApp } from "../../components/Icons";
+import { IconBox, IconRefresh, IconSettings, IconShare, IconUser, IconWhatsApp } from "../../components/Icons";
 import { Page, PageHeader } from "../../components/Layout";
 import { ErrorState, Field, Spinner } from "../../components/ui";
 import api, { errorMessage, fieldErrors } from "../../lib/api";
@@ -24,7 +24,7 @@ export default function AssociationSettings() {
 }
 
 function Settings({ association }: { association: Association }) {
-  const { refresh, logout } = useAuth();
+  const { refresh, logout, session } = useAuth();
   const [current, setCurrent] = useState(association);
   const [form, setForm] = useState({
     name: association.name,
@@ -151,6 +151,11 @@ function Settings({ association }: { association: Association }) {
         <Link to="/minhas" className="flex min-h-[60px] items-center gap-3 px-4 font-bold hover:bg-paper">
           <IconBox /> Minhas encomendas
         </Link>
+        {session?.user.is_super_admin && (
+          <Link to="/sistema" className="flex min-h-[60px] items-center gap-3 px-4 font-bold hover:bg-paper">
+            <IconSettings /> Painel do sistema
+          </Link>
+        )}
       </nav>
 
       <button type="button" className="btn-danger w-full" onClick={() => void logout()}>

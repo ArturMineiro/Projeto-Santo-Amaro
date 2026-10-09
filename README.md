@@ -27,17 +27,59 @@ docker compose up -d --build
 
 Espere 1 ou 2 minutos na primeira vez e abra **http://localhost:8080**.
 
-Na primeira subida o sistema cria as tabelas sozinho e uma associação de exemplo:
+Na primeira subida o sistema cria as tabelas sozinho e dados de exemplo (com `SEED_DEMO=true`, que é o padrão):
 
-| Quem | WhatsApp para entrar | Senha |
-|---|---|---|
-| Administração | (11) 90000-0001 | senha123 |
-| Morador | (11) 90000-0002 | senha123 |
+| Quem | WhatsApp para entrar | Senha | Cai em |
+|---|---|---|---|
+| Administração do sistema (super admin) | (11) 90000-0000 | senha123 | `/sistema`: todas as associações, vínculos e logs |
+| Administração da associação Santo Amaro | (11) 90000-0001 | senha123 | `/painel`: registrar e entregar encomendas |
+| Morador (Artur Silva) | (11) 90000-0002 | senha123 | `/minhas`: encomendas esperando e histórico |
+| Administração da associação Jardim das Flores | (11) 90000-0010 | senha123 | `/painel` |
 
-Código da associação de exemplo (para testar o cadastro de morador): **SANTO1**
+O login aceita o telefone em qualquer formato (`11900000000`, `(11) 90000-0000`) ou o email (`sistema@example.com`, `admin@example.com`).
+
+Códigos de convite de exemplo (para testar o cadastro de morador): **SANTO1** e **FLORES**.
+Há também um cadastro esperando confirmação (Ricardo Gomes) para testar a aprovação.
+
+> Os dados de exemplo só são criados se o banco estiver vazio. Se você já subiu antes e quer recriá-los: `docker compose down -v` e depois `docker compose up -d --build` (isso **apaga** o banco).
+
+### Painel do sistema (`/sistema`)
+
+Só para quem tem `is_super_admin`. Entre com o super admin e o site abre direto nele:
+
+- **Visão geral**: totais de associações, pessoas, vínculos e encomendas; avisos enviados/falhos nos últimos 7 dias; gráfico de encomendas por dia; dados do servidor (versões, banco, WhatsApp/email configurados, fila, disco, tamanho do log) e alertas do que precisa de atenção.
+- **Associações**: busca por nome, código de convite, email, endereço ou nome/telefone de quem administra. Abrindo uma, aparecem os moradores e administradores, a atividade recente e o botão de **desativar/reativar** (desativada, ninguém dela usa o painel; os dados ficam guardados).
+- **Vínculos**: todas as ligações pessoa ↔ associação, com filtro por situação e papel.
+- **Logs**: *Atividades* (quem fez o quê: entradas, senhas erradas, encomendas registradas/entregues, aprovações…), *Avisos* (cada WhatsApp/email, com o erro quando falha) e *Servidor* (final do `storage/logs/laravel.log`).
+
+Senhas nunca vão para o log, e tentativas de login erradas aparecem com o telefone mascarado.
+
+#### Criar o super admin em produção
+
+Com `SEED_DEMO=false` não existe super admin. Crie o seu (ou promova alguém que já tem cadastro):
+
+```bash
+docker compose exec backend php artisan sistema:admin "(11) 98888-7777" --nome="Seu Nome" --senha="uma-senha-forte"
+# tirar o acesso:
+docker compose exec backend php artisan sistema:admin "(11) 98888-7777" --remover
+```
+
+Sem Docker: `php artisan sistema:admin "(11) 98888-7777" --senha="..."` dentro de `backend-laravel/`.
+
+> Em produção, **não use** `SEED_DEMO=true`: as contas de exemplo têm senha `senha123`.
 
 ### Comandos úteis
-
+┌─────────────────────────┬─────────────────┬──────────┐
+│ Quem                    │ WhatsApp        │ Abre em  │
+├─────────────────────────┼─────────────────┼──────────┤
+│ Super admin             │ (11) 90000-0000 │ /sistema │
+├─────────────────────────┼─────────────────┼──────────┤
+│ Admin Santo Amaro       │ (11) 90000-0001 │ /painel  │
+├─────────────────────────┼─────────────────┼──────────┤
+│ Morador                 │ (11) 90000-0002 │ /minhas  │
+├─────────────────────────┼─────────────────┼──────────┤
+│ Admin Jardim das Flores │ (11) 90000-0010 │ /painel  │
+└─────────────────────────┴─────────────────┴──────────┘
 ```bash
 docker compose ps                  # ver se está tudo rodando
 docker compose logs -f backend     # ver o que a API está fazendo (avisos aparecem aqui)
@@ -193,6 +235,7 @@ Testes da API: `cd backend-laravel && php artisan test`
 | `memberships` | Vínculo pessoa ↔ associação: papel (`admin`/`resident`), situação (`pending`/`approved`/`rejected`), casa/apto |
 | `packages` | Encomenda: morador, tipo (pacote/carta/documento/outro), descrição, transportadora, rastreio, situação (`received`/`picked_up`), código de retirada, datas |
 | `package_notifications` | Histórico de cada aviso: canal, sucesso/falha, erro |
+| `activity_logs` | Registro de atividades: quem fez o quê, em qual associação, IP e quando |
 
 Uma mesma pessoa pode participar de mais de uma associação. Cada associação só enxerga os próprios dados.
 
@@ -211,4 +254,6 @@ Autenticação por token (`Authorization: Bearer …`, Laravel Sanctum).
 | GET | `/api/admin/dashboard` | administração |
 | GET / POST / PATCH / DELETE | `/api/admin/residents[/{id}]`, `…/approve`, `…/reject` | administração |
 | GET / POST / PATCH / DELETE | `/api/admin/packages[/{id}]`, `…/pickup`, `…/undo-pickup`, `…/notify`, `…/notified-manually` | administração |
+| GET | `/api/system/overview`, `/api/system/associations[/{id}]`, `/api/system/memberships`, `/api/system/activity`, `/api/system/notifications`, `/api/system/app-log` | super admin |
+| PATCH | `/api/system/associations/{id}` (`is_active`) | super admin |
 | PATCH / POST | `/api/admin/association`, `/api/admin/association/invite-code` | administração |

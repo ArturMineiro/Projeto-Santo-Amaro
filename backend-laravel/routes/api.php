@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\MyPackageController;
 use App\Http\Controllers\Api\PackageController;
 use App\Http\Controllers\Api\ResidentController;
+use App\Http\Controllers\Api\SystemController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -51,5 +52,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/packages/{package}/undo-pickup', [PackageController::class, 'undoPickup']);
         Route::post('/packages/{package}/notify', [PackageController::class, 'notify']);
         Route::post('/packages/{package}/notified-manually', [PackageController::class, 'notifiedManually']);
+    });
+
+    // Administração do sistema inteiro (super admin)
+    Route::middleware('superadmin')->prefix('system')->group(function () {
+        Route::get('/overview', [SystemController::class, 'overview']);
+        Route::get('/associations', [SystemController::class, 'associations']);
+        Route::get('/associations/{association}', [SystemController::class, 'showAssociation']);
+        Route::patch('/associations/{association}', [SystemController::class, 'updateAssociation']);
+        Route::get('/memberships', [SystemController::class, 'memberships']);
+        Route::get('/activity', [SystemController::class, 'activity']);
+        Route::get('/notifications', [SystemController::class, 'notifications']);
+        Route::get('/app-log', [SystemController::class, 'appLog']);
     });
 });

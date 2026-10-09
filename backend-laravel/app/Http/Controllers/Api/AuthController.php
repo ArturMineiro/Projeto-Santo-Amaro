@@ -9,6 +9,7 @@ use App\Models\Association;
 use App\Models\Membership;
 use App\Models\User;
 use App\Rules\BrazilianPhone;
+use App\Support\Activity;
 use App\Support\Phone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -66,6 +67,8 @@ class AuthController extends Controller
 
             return [$user, $membership];
         });
+
+        Activity::record('association.created', "Associação criada: {$membership->association->name}", $membership->association, $membership->association, user: $user);
 
         return $this->sessionResponse($request, $user, 'Associação criada. Bem-vindo!', 201, $membership);
     }
@@ -138,6 +141,14 @@ class AuthController extends Controller
             ? 'Cadastro concluído! Você já pode acompanhar suas encomendas.'
             : 'Cadastro enviado! A associação vai confirmar em breve.';
 
+        Activity::record(
+            'resident.signed_up',
+            "{$user->name} se cadastrou com o código" . ($membership->isApproved() ? ' (já estava cadastrado pela associação)' : ''),
+            $association,
+            $membership,
+            user: $user,
+        );
+
         return $this->sessionResponse($request, $user, $message, 201, $membership);
     }
 
@@ -155,6 +166,9 @@ class AuthController extends Controller
             : User::where('phone', Phone::normalize($login))->first();
 
         if (! $user || ! $user->hasPassword() || ! Hash::check($data['password'], $user->password)) {
+            // Não grava a senha; o login aparece mascarado
+            Activity::record('auth.login_failed', 'Tentativa de entrar com senha errada: ' . $this->maskLogin($login), user: $user);
+
             throw ValidationException::withMessages([
                 'login' => 'Telefone ou senha incorretos.',
             ]);
@@ -166,7 +180,23 @@ class AuthController extends Controller
             ]);
         }
 
+        Activity::record('auth.login', "{$user->name} entrou", user: $user);
+
         return $this->sessionResponse($request, $user, 'Que bom te ver!');
+    }
+
+    /** "5511999998888" -> "55119****8888", "ana@x.com" -> "an***@x.com" */
+    private function maskLogin(string $login): string
+    {
+        if (str_contains($login, '@')) {
+            [$name, $domain] = explode('@', $login, 2);
+
+            return mb_substr($name, 0, 2) . '***@' . $domain;
+        }
+
+        $digits = Phone::normalize($login);
+
+        return strlen($digits) > 8 ? substr($digits, 0, 5) . str_repeat('*', strlen($digits) - 9) . substr($digits, -4) : '***';
     }
 
     public function me(Request $request): JsonResponse

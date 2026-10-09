@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\ActivityLog;
 use App\Models\Association;
 use App\Models\Membership;
 use App\Models\Package;
@@ -10,14 +11,47 @@ use Illuminate\Database\Seeder;
 
 /**
  * Dados de demonstração.
- *   Admin:    (11) 90000-0001 / senha123
- *   Morador:  (11) 90000-0002 / senha123
- *   Código da associação: SANTO1
+ *   Sistema (super admin): (11) 90000-0000 / senha123  -> /sistema
+ *   Admin da associação:   (11) 90000-0001 / senha123
+ *   Morador:               (11) 90000-0002 / senha123
+ *   Código da associação:  SANTO1
  */
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Administração do sistema: vê todas as associações, vínculos e logs.
+        // Em produção crie com: php artisan sistema:admin "<telefone>" --senha="..."
+        $system = User::create([
+            'name' => 'Administração do Sistema',
+            'phone' => '5511900000000',
+            'email' => 'sistema@example.com',
+            'password' => 'senha123',
+        ]);
+        $system->forceFill(['is_super_admin' => true])->save();
+
+        // Segunda associação, para o painel do sistema ter o que pesquisar
+        $other = Association::create([
+            'name' => 'Associação Jardim das Flores',
+            'slug' => 'jardim-das-flores',
+            'invite_code' => 'FLORES',
+            'pickup_hours' => 'Seg a sáb, 9h às 17h',
+        ]);
+        $otherAdmin = User::create(['name' => 'Carlos Pereira', 'phone' => '5511900000010', 'password' => 'senha123']);
+        Membership::create([
+            'association_id' => $other->id,
+            'user_id' => $otherAdmin->id,
+            'role' => Membership::ROLE_ADMIN,
+            'status' => Membership::STATUS_APPROVED,
+            'approved_at' => now(),
+        ]);
+        ActivityLog::create([
+            'user_id' => $otherAdmin->id,
+            'association_id' => $other->id,
+            'action' => 'association.created',
+            'description' => "Associação criada: {$other->name}",
+        ]);
+
         $association = Association::create([
             'name' => 'Associação de Moradores Santo Amaro',
             'slug' => 'santo-amaro',
@@ -76,6 +110,7 @@ class DatabaseSeeder extends Seeder
             [0, 'letter', 'Conta de luz', 'Correios', 2],
             [1, 'package', 'Pacote pequeno', 'Shopee', 9],
             [2, 'document', 'Carta registrada', 'Correios', 1],
+            [3, 'package', 'Pacote médio', 'TikTok Shop', 0],
         ];
 
         foreach ($samples as [$i, $type, $description, $carrier, $daysAgo]) {

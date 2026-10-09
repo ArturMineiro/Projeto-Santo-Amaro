@@ -18,7 +18,8 @@ const TYPES: { value: PackageType; label: string }[] = [
   { value: "other", label: "Outro" },
 ];
 
-const CARRIERS = ["Correios", "Mercado Livre", "Shopee", "Amazon", "Magalu"];
+// Ordem pelo que mais chega na associação
+const CARRIERS = ["Correios", "Mercado Livre", "Shopee", "TikTok Shop", "Amazon", "Magalu"];
 
 /** Sem acento e minúsculo, para "jose" achar "José". */
 function normalize(text: string) {

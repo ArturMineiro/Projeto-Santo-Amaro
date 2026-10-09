@@ -18,7 +18,7 @@ class User extends Authenticatable
         'email',
         'phone',
         'password',
-        'is_super_admin',
+        // is_super_admin fica de fora de propósito: só via forceFill (comando sistema:admin)
         'is_active',
         'notify_whatsapp',
         'notify_email',

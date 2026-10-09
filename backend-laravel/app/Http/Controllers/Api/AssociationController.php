@@ -9,6 +9,7 @@ use App\Models\Membership;
 use App\Models\Package;
 use App\Models\PackageNotification;
 use App\Services\PackageNotifier;
+use App\Support\Activity;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -58,6 +59,7 @@ class AssociationController extends Controller
         ]);
 
         $association->update($data);
+        Activity::record('association.updated', 'Dados da associação alterados', $association, $association, ['fields' => array_keys($data)]);
 
         return response()->json([
             'message' => 'Dados da associação salvos.',
@@ -70,6 +72,7 @@ class AssociationController extends Controller
     {
         $association = $this->association($request);
         $association->update(['invite_code' => Association::generateInviteCode()]);
+        Activity::record('association.invite_regenerated', 'Novo código de convite gerado', $association, $association);
 
         return response()->json([
             'message' => 'Novo código gerado. O anterior deixou de funcionar.',

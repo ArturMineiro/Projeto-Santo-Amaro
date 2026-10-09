@@ -13,6 +13,7 @@ export interface User {
   notify_whatsapp: boolean;
   notify_email: boolean;
   has_access: boolean;
+  is_super_admin?: boolean;
   created_at: string | null;
 }
 

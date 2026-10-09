@@ -7,6 +7,7 @@ use App\Http\Resources\MembershipResource;
 use App\Models\Membership;
 use App\Models\User;
 use App\Rules\BrazilianPhone;
+use App\Support\Activity;
 use App\Support\Phone;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -98,6 +99,8 @@ class ResidentController extends Controller
             ]);
         });
 
+        Activity::record('resident.created', "Morador cadastrado pela associação: {$membership->user->name}", $association, $membership);
+
         return response()->json([
             'message' => 'Morador cadastrado.',
             'resident' => new MembershipResource($membership->load('user')),
@@ -150,6 +153,10 @@ class ResidentController extends Controller
             $membership->update(array_intersect_key($data, array_flip(['unit', 'role'])));
         });
 
+        if (isset($data['role']) && $membership->wasChanged('role')) {
+            $this->log($request, 'resident.role_changed', $data['role'] === Membership::ROLE_ADMIN ? 'Passou a fazer parte da administração' : 'Saiu da administração', $membership);
+        }
+
         return response()->json([
             'message' => 'Dados do morador atualizados.',
             'resident' => new MembershipResource($membership->fresh('user')),
@@ -167,6 +174,7 @@ class ResidentController extends Controller
             ]);
         }
 
+        $this->log($request, 'resident.removed', 'Removido da associação', $membership);
         $membership->delete();
 
         return response()->json(['message' => 'Morador removido da associação.']);
@@ -176,6 +184,7 @@ class ResidentController extends Controller
     {
         $this->authorizeMembership($request, $membership);
         $membership->approve($request->user());
+        $this->log($request, 'resident.approved', 'Cadastro aprovado', $membership);
 
         return response()->json([
             'message' => 'Cadastro aprovado.',
@@ -199,10 +208,18 @@ class ResidentController extends Controller
             'rejection_reason' => $data['rejection_reason'] ?? null,
         ]);
 
+        $this->log($request, 'resident.rejected', 'Cadastro recusado', $membership);
+
         return response()->json([
             'message' => 'Cadastro recusado.',
             'resident' => new MembershipResource($membership->fresh('user')),
         ]);
+    }
+
+    private function log(Request $request, string $action, string $text, Membership $membership): void
+    {
+        $membership->loadMissing('user');
+        Activity::record($action, "{$text}: {$membership->user?->name}", $this->association($request), $membership);
     }
 
     private function authorizeMembership(Request $request, Membership $membership): void

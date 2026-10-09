@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureAssociationMember;
+use App\Http\Middleware\EnsureSuperAdmin;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
@@ -19,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'association' => EnsureAssociationMember::class,
+            'superadmin' => EnsureSuperAdmin::class,
         ]);
 
         // Não há tela de login no Laravel (o front é o React): nunca redirecionar
