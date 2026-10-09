@@ -225,4 +225,66 @@ class PackageTest extends TestCase
 
         $this->assertCount(2, $whatsapp->sent);
     }
+
+    public function test_free_mode_admin_notifies_by_own_whatsapp(): void
+    {
+        Mail::fake();
+        $this->app->bind(PackageNotifier::class, fn () => new PackageNotifier(null));
+
+        $association = $this->makeAssociation();
+        $admin = $this->makeMember($association, Membership::ROLE_ADMIN);
+        // Sem email: nenhum aviso automático é possível
+        $resident = $this->makeMember($association, userAttributes: ['email' => null]);
+
+        $this->actingAs($admin->user);
+        $response = $this->postJson('/api/admin/packages', ['membership_id' => $resident->id])
+            ->assertCreated()
+            ->assertJsonPath('message', 'Encomenda registrada. Avise o morador pelo seu WhatsApp.')
+            ->assertJsonPath('package.notified_at', null)
+            ->assertJsonCount(0, 'package.notifications');
+        $id = $response->json('package.id');
+
+        $this->getJson('/api/admin/dashboard')
+            ->assertJsonPath('whatsapp_enabled', false)
+            ->assertJsonPath('waiting_not_notified', 1);
+        $this->getJson('/api/admin/packages?not_notified=1')->assertJsonCount(1, 'data');
+
+        $this->postJson("/api/admin/packages/{$id}/notified-manually")
+            ->assertOk()
+            ->assertJsonPath('package.notifications.0.channel', 'whatsapp')
+            ->assertJsonPath('package.notifications.0.status', 'sent')
+            ->assertJsonPath('package.notifications.0.manual', true)
+            ->assertJsonPath('package.notified_at', fn ($v) => $v !== null);
+
+        $this->assertDatabaseHas('package_notifications', [
+            'package_id' => $id,
+            'provider' => PackageNotification::PROVIDER_MANUAL,
+            'recipient' => $resident->user->phone,
+        ]);
+        $this->getJson('/api/admin/dashboard')->assertJsonPath('waiting_not_notified', 0);
+        $this->getJson('/api/admin/packages?not_notified=1')->assertJsonCount(0, 'data');
+        Mail::assertNothingSent();
+
+        // Depois de entregue não faz sentido registrar aviso
+        $this->postJson("/api/admin/packages/{$id}/pickup")->assertOk();
+        $this->postJson("/api/admin/packages/{$id}/notified-manually")->assertStatus(422);
+    }
+
+    public function test_manual_notification_is_admin_only_and_scoped_to_association(): void
+    {
+        Mail::fake();
+        $this->app->bind(PackageNotifier::class, fn () => new PackageNotifier(null));
+
+        $a = $this->makeAssociation();
+        $b = $this->makeAssociation();
+        $adminA = $this->makeMember($a, Membership::ROLE_ADMIN);
+        $adminB = $this->makeMember($b, Membership::ROLE_ADMIN);
+        $residentB = $this->makeMember($b);
+
+        $id = $this->actingAs($adminB->user)->postJson('/api/admin/packages', ['membership_id' => $residentB->id])->json('package.id');
+
+        $this->actingAs($adminA->user)->postJson("/api/admin/packages/{$id}/notified-manually")->assertNotFound();
+        $this->actingAs($residentB->user)->postJson("/api/admin/packages/{$id}/notified-manually")->assertForbidden();
+        $this->assertSame(0, PackageNotification::where('provider', PackageNotification::PROVIDER_MANUAL)->count());
+    }
 }

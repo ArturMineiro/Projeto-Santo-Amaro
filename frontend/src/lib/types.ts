@@ -44,6 +44,8 @@ export interface Membership {
 export interface PackageNotification {
   channel: "whatsapp" | "email";
   status: "sent" | "failed";
+  /** true = a administração avisou pelo próprio WhatsApp (botão wa.me) */
+  manual?: boolean;
   recipient: string;
   error: string | null;
   created_at: string | null;
@@ -84,6 +86,7 @@ export interface SessionResponse extends Session {
 export interface Dashboard {
   waiting: number;
   waiting_over_7_days: number;
+  waiting_not_notified: number;
   received_today: number;
   picked_up_today: number;
   residents: number;

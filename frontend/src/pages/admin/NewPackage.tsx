@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import NewResidentSheet from "../../components/admin/NewResidentSheet";
+import ManualWhatsAppButton from "../../components/admin/ManualWhatsAppButton";
 import { IconBell, IconCheck, IconPlus, IconSearch, IconWhatsApp, PackageTypeIcon } from "../../components/Icons";
 import { Page, PageHeader } from "../../components/Layout";
 import Ticket from "../../components/Ticket";
@@ -8,7 +9,7 @@ import { ErrorState, Field, Notice, Spinner, Toggle } from "../../components/ui"
 import api, { errorMessage } from "../../lib/api";
 import { useApi } from "../../lib/hooks";
 import { toast } from "../../lib/toast";
-import type { Membership, Package, PackageType } from "../../lib/types";
+import type { Dashboard, Membership, Package, PackageType } from "../../lib/types";
 
 const TYPES: { value: PackageType; label: string }[] = [
   { value: "package", label: "Pacote" },
@@ -160,6 +161,12 @@ function PackageForm({ resident, onChange, onCreated }: { resident: Membership; 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const user = resident.user!;
+  // Sem provedor pago o WhatsApp é enviado à mão na tela seguinte
+  const autoWhatsApp = useApi<Dashboard>("/admin/dashboard").data?.whatsapp_enabled ?? true;
+  const notifyHow =
+    user.notify_whatsapp && autoWhatsApp
+      ? "Por WhatsApp" + (user.email ? " (e email se falhar)" : "")
+      : [user.email && "Por email", "Pelo seu WhatsApp na próxima tela"].filter(Boolean).join(" e ");
 
   async function submit() {
     setSending(true);
@@ -269,7 +276,7 @@ function PackageForm({ resident, onChange, onCreated }: { resident: Membership; 
       <div className="rounded-card border border-line bg-white px-4">
         <Toggle
           label={`Avisar ${user.first_name} agora`}
-          description={user.notify_whatsapp ? "Por WhatsApp" + (user.email ? " (e email se falhar)" : "") : user.email ? "Por email" : "Sem WhatsApp nem email ativo"}
+          description={notifyHow}
           checked={form.notify}
           onChange={(notify) => setForm({ ...form, notify })}
         />
@@ -285,17 +292,21 @@ function PackageForm({ resident, onChange, onCreated }: { resident: Membership; 
   );
 }
 
-function Done({ pkg, onAnother }: { pkg: Package; onAnother: () => void }) {
+function Done({ pkg: initial, onAnother }: { pkg: Package; onAnother: () => void }) {
+  const [pkg, setPkg] = useState(initial);
   const notifications = pkg.notifications ?? [];
-  const sent = notifications.filter((n) => n.status === "sent");
+  const automatic = notifications.filter((n) => !n.manual);
+  const sent = automatic.filter((n) => n.status === "sent");
   const whatsappOk = sent.some((n) => n.channel === "whatsapp");
   const emailOk = sent.some((n) => n.channel === "email");
+  const manualOk = notifications.some((n) => n.manual);
   const name = pkg.resident?.first_name ?? "o morador";
 
   async function resend() {
     try {
-      const { data } = await api.post<{ message: string }>(`/admin/packages/${pkg.id}/notify`);
+      const { data } = await api.post<{ message: string; package: Package }>(`/admin/packages/${pkg.id}/notify`);
       toast(data.message);
+      setPkg(data.package);
     } catch (err) {
       toast(errorMessage(err), "error");
     }
@@ -314,29 +325,41 @@ function Done({ pkg, onAnother }: { pkg: Package; onAnother: () => void }) {
               <IconWhatsApp /> {name} já recebeu o aviso no WhatsApp.
             </span>
           </Notice>
+        ) : manualOk ? (
+          <Notice tone="success">
+            <span className="inline-flex items-center gap-2 font-bold">
+              <IconWhatsApp /> Você avisou {name} pelo seu WhatsApp.
+            </span>
+          </Notice>
         ) : emailOk ? (
           <Notice tone="success">
             <span className="font-bold">Aviso enviado por email para {name}.</span>
+            {pkg.whatsapp_link && " Se quiser, avise também pelo seu WhatsApp."}
           </Notice>
-        ) : notifications.length > 0 ? (
+        ) : automatic.length > 0 ? (
           <Notice tone="error">O aviso automático não foi entregue. Avise pelo seu WhatsApp abaixo.</Notice>
+        ) : pkg.whatsapp_link ? (
+          <Notice tone="warning">
+            <span className="font-bold">Falta avisar {name}.</span> Toque no botão verde: o WhatsApp abre com a mensagem pronta, é só enviar.
+          </Notice>
         ) : (
           <Notice tone="warning">Nenhum aviso foi enviado.</Notice>
         )}
       </div>
 
       <div className="mt-5 flex flex-col gap-3">
-        {pkg.whatsapp_link && !whatsappOk && (
-          <a href={pkg.whatsapp_link} target="_blank" rel="noreferrer" className="btn-whatsapp w-full">
-            <IconWhatsApp />
-            Avisar pelo meu WhatsApp
-          </a>
+        {!whatsappOk && (
+          <ManualWhatsAppButton
+            pkg={pkg}
+            onRegistered={setPkg}
+            label={manualOk ? "Abrir o WhatsApp de novo" : "Avisar pelo meu WhatsApp"}
+          />
         )}
         <button type="button" className="btn-primary w-full" onClick={onAnother}>
           <IconPlus />
           Registrar outra
         </button>
-        {!whatsappOk && notifications.length > 0 && (
+        {!whatsappOk && !manualOk && automatic.length > 0 && (
           <button type="button" className="btn-secondary w-full" onClick={() => void resend()}>
             <IconBell size={22} />
             Tentar aviso automático de novo

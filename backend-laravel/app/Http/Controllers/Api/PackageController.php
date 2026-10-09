@@ -7,6 +7,8 @@ use App\Http\Resources\PackageResource;
 use App\Jobs\SendPackageNotification;
 use App\Models\Membership;
 use App\Models\Package;
+use App\Models\PackageNotification;
+use App\Services\PackageNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -25,6 +27,7 @@ class PackageController extends Controller
             'search' => ['nullable', 'string', 'max:100'],
             'membership_id' => ['nullable', 'integer'],
             'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
+            'not_notified' => ['nullable', 'boolean'],
         ]);
 
         $status = $data['status'] ?? Package::STATUS_RECEIVED;
@@ -39,6 +42,10 @@ class PackageController extends Controller
 
         if (! empty($data['membership_id'])) {
             $query->where('membership_id', $data['membership_id']);
+        }
+
+        if (! empty($data['not_notified'])) {
+            $query->whereNull('notified_at');
         }
 
         if ($search = trim($data['search'] ?? '')) {
@@ -102,9 +109,16 @@ class PackageController extends Controller
             SendPackageNotification::dispatch($package);
         }
 
+        $package = $package->fresh([...self::RELATIONS, 'notifications']);
+        $notified = $package->notifications->contains('status', PackageNotification::STATUS_SENT);
+
         return response()->json([
-            'message' => $notify ? 'Encomenda registrada e morador avisado.' : 'Encomenda registrada.',
-            'package' => new PackageResource($package->fresh([...self::RELATIONS, 'notifications'])),
+            'message' => match (true) {
+                ! $notify => 'Encomenda registrada.',
+                $notified => 'Encomenda registrada e morador avisado.',
+                default => 'Encomenda registrada. Avise o morador pelo seu WhatsApp.',
+            },
+            'package' => new PackageResource($package),
         ], 201);
     }
 
@@ -197,6 +211,23 @@ class PackageController extends Controller
 
         return response()->json([
             'message' => 'Aviso reenviado.',
+            'package' => new PackageResource($package->fresh([...self::RELATIONS, 'notifications'])),
+        ]);
+    }
+
+    /** A administração avisou pelo próprio WhatsApp (botão "Avisar pelo meu WhatsApp"). */
+    public function notifiedManually(Request $request, Package $package, PackageNotifier $notifier): JsonResponse
+    {
+        $this->authorizePackage($request, $package);
+
+        if (! $package->isWaiting()) {
+            throw ValidationException::withMessages(['package' => 'Esta encomenda já foi retirada.']);
+        }
+
+        $notifier->markManualWhatsApp($package);
+
+        return response()->json([
+            'message' => 'Aviso pelo WhatsApp registrado.',
             'package' => new PackageResource($package->fresh([...self::RELATIONS, 'notifications'])),
         ]);
     }

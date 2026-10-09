@@ -13,6 +13,9 @@ class PackageNotification extends Model
     public const STATUS_SENT = 'sent';
     public const STATUS_FAILED = 'failed';
 
+    /** Aviso feito pela administração no próprio WhatsApp (link wa.me), sem provedor pago. */
+    public const PROVIDER_MANUAL = 'manual';
+
     protected $fillable = [
         'package_id',
         'channel',

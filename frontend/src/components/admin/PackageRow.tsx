@@ -21,6 +21,7 @@ export default function PackageRow({ pkg, onOpen }: { pkg: Package; onOpen: (id:
         </span>
         <span className={`block text-[0.9375rem] ${late ? "font-bold text-alert" : "text-muted"}`}>
           {waiting ? `Chegou ${relativeDate(pkg.arrived_at)}` : `Retirada ${relativeDate(pkg.picked_up_at)}`}
+          {waiting && !pkg.notified_at && <span className="ml-2 font-bold text-sun-dark">· Falta avisar</span>}
         </span>
       </span>
       <span className="font-display text-[1.25rem] font-extrabold tracking-[0.06em] tabular-nums text-ink">{pkg.pickup_code}</span>

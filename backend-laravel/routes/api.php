@@ -50,5 +50,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/packages/{package}/pickup', [PackageController::class, 'pickup']);
         Route::post('/packages/{package}/undo-pickup', [PackageController::class, 'undoPickup']);
         Route::post('/packages/{package}/notify', [PackageController::class, 'notify']);
+        Route::post('/packages/{package}/notified-manually', [PackageController::class, 'notifiedManually']);
     });
 });

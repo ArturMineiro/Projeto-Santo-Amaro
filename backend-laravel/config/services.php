@@ -30,11 +30,12 @@ return [
 
     /*
     | WhatsApp: none | log | zapi | ultramsg | twilio
-    | "none" desliga o envio automático (o painel ainda oferece o link wa.me).
+    | "none" (padrão, gratuito) desliga o envio automático: o painel oferece o
+    | botão "Avisar pelo meu WhatsApp" (link wa.me) e o email segue automático.
     | "log" grava a mensagem em storage/logs — bom para desenvolvimento.
     */
     'whatsapp' => [
-        'driver' => env('WHATSAPP_DRIVER', 'log'),
+        'driver' => env('WHATSAPP_DRIVER', 'none'),
 
         'zapi' => [
             'instance' => env('ZAPI_INSTANCE'),

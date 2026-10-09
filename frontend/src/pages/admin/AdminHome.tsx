@@ -54,6 +54,19 @@ export default function AdminHome() {
               <strong>{plural(d.pending_residents, "cadastro esperando", "cadastros esperando")}</strong> sua confirmação.
             </Notice>
           )}
+          {d.waiting_not_notified > 0 && (
+            <Notice
+              tone="warning"
+              action={
+                <Link to="/painel/encomendas?sem_aviso=1" className="btn-secondary min-h-[48px]">
+                  Ver
+                </Link>
+              }
+            >
+              <strong>{plural(d.waiting_not_notified, "encomenda", "encomendas")}</strong> sem aviso ao morador. Abra e use “Avisar pelo meu
+              WhatsApp”.
+            </Notice>
+          )}
           {d.failed_notifications_7d > 0 && (
             <Notice tone="error">
               {plural(d.failed_notifications_7d, "aviso não foi entregue", "avisos não foram entregues")} nesta semana. Abra a

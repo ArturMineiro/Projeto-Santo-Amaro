@@ -54,7 +54,7 @@ docker compose exec backend tail -n 50 storage/logs/laravel.log
 
 ### Configurar (opcional)
 
-Sem configuração nenhuma, tudo funciona em modo de teste: os avisos são **gravados no log**, não enviados.
+Sem configuração nenhuma, o sistema roda na **versão gratuita** em modo de teste: os emails são **gravados no log**, e o WhatsApp é enviado pela administração com o botão **“Avisar pelo meu WhatsApp”**.
 Para personalizar, crie um `.env` na raiz a partir do exemplo e suba de novo:
 
 ```bash
@@ -70,37 +70,68 @@ Principais opções do `.env`:
 | `APP_URL` | Endereço público do site, ex.: `https://encomendas.minhaassociacao.org` |
 | `SEED_DEMO` | `true` cria os dados de exemplo no primeiro start. Use `false` em produção |
 | `DB_PASSWORD`, `DB_ROOT_PASSWORD` | Senhas do MySQL. **Troque antes da primeira subida** em produção |
-| `MAIL_*` | Envio de email de verdade (SMTP: Gmail com senha de app, Brevo, etc.) |
-| `WHATSAPP_DRIVER` | `log` (teste), `none`, `zapi`, `ultramsg` ou `twilio` |
+| `MAIL_*` | Envio de email de verdade (SMTP grátis: Gmail com senha de app, Brevo) |
+| `WHATSAPP_DRIVER` | `none` (padrão, gratuito), `log` (teste), `zapi` ou `ultramsg` (pagos) |
+| `CLOUDFLARE_TUNNEL_TOKEN` | Endereço fixo na internet pelo Cloudflare Tunnel (grátis) |
 
-#### Ativar o WhatsApp de verdade
+### Versão gratuita (sem custo mensal)
 
-1. Crie uma conta em um provedor: [Z-API](https://z-api.io), [UltraMsg](https://ultramsg.com) (mais baratos) ou [Twilio](https://www.twilio.com/whatsapp).
-2. No `.env`, preencha, por exemplo, com Z-API:
+| Parte | Como funciona |
+|---|---|
+| Email | Automático, por SMTP grátis (Gmail ~500/dia ou Brevo 300/dia) |
+| WhatsApp | Na tela “Registrada!” e na encomenda, o botão **Avisar pelo meu WhatsApp** abre o WhatsApp de quem está no painel com a mensagem pronta. O sistema registra o aviso |
+| Pendências | O painel mostra quantas encomendas **faltam avisar**, e a lista tem o filtro “Só as que faltam avisar” |
+| Internet | Cloudflare Tunnel (grátis, HTTPS, sem abrir porta no roteador) |
+
+#### Ativar email de verdade (Gmail, grátis)
+
+1. Ative a verificação em duas etapas da conta Google.
+2. Crie uma senha de app em https://myaccount.google.com/apppasswords.
+3. No `.env`:
    ```env
-   WHATSAPP_DRIVER=zapi
-   ZAPI_INSTANCE=sua-instancia
-   ZAPI_TOKEN=seu-token
-   ZAPI_CLIENT_TOKEN=seu-client-token
+   MAIL_MAILER=smtp
+   MAIL_HOST=smtp.gmail.com
+   MAIL_PORT=587
+   MAIL_USERNAME=seuemail@gmail.com
+   MAIL_PASSWORD=senha-de-app-de-16-letras
+   MAIL_FROM_ADDRESS=seuemail@gmail.com
    ```
-3. `docker compose up -d`
+4. `docker compose up -d`
 
-Sem provedor pago, a administração ainda pode avisar com o botão **“Avisar pelo meu WhatsApp”**: ele abre o WhatsApp do celular com a mensagem pronta.
+#### Colocar na internet de graça (Cloudflare Tunnel)
 
-#### Ativar email de verdade (exemplo Gmail)
+Teste rápido, sem conta (o endereço muda toda vez que o túnel reinicia):
 
-```env
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=seuemail@gmail.com
-MAIL_PASSWORD=senha-de-app-de-16-letras
-MAIL_FROM_ADDRESS=seuemail@gmail.com
+```bash
+docker compose --profile tunel-teste up -d
+docker compose logs tunnel-teste     # procure o endereço https://...trycloudflare.com
 ```
 
-### Colocar na internet
+Endereço fixo (conta grátis na Cloudflare, precisa de um domínio apontado para ela):
 
-- Rode numa VPS com Docker, aponte o domínio e coloque HTTPS na frente (Caddy, Nginx Proxy Manager ou Cloudflare Tunnel).
+1. Em https://one.dash.cloudflare.com → *Networks* → *Tunnels*, crie um túnel (tipo *Cloudflared*) e copie o token.
+2. Em *Public hostname*, aponte o seu domínio (ex.: `encomendas.suaassociacao.org`) para `http://frontend:80`.
+3. No `.env`: `CLOUDFLARE_TUNNEL_TOKEN=...` e `APP_URL=https://encomendas.suaassociacao.org`.
+4. `docker compose --profile tunel up -d`
+
+O computador (ou VPS gratuita) precisa ficar ligado.
+
+#### WhatsApp automático (opcional, pago)
+
+Se a associação quiser que o aviso saia sozinho, contrate [Z-API](https://z-api.io) ou [UltraMsg](https://ultramsg.com) e use **um chip só para isso** (não são APIs oficiais e o número pode ser bloqueado). No `.env`:
+
+```env
+WHATSAPP_DRIVER=zapi
+ZAPI_INSTANCE=sua-instancia
+ZAPI_TOKEN=seu-token
+ZAPI_CLIENT_TOKEN=seu-client-token
+```
+
+O driver `twilio` existe, mas a API oficial exige templates aprovados pela Meta para iniciar conversa, o que ainda não é suportado.
+
+### Colocar na internet (outras opções)
+
+- Rode numa VPS com Docker, aponte o domínio e coloque HTTPS na frente (Caddy, Nginx Proxy Manager ou o Cloudflare Tunnel acima).
 - Ajuste `APP_URL`, `SEED_DEMO=false` e as senhas do banco **antes** da primeira subida.
 - O MySQL não é exposto para fora: só os containers falam com ele.
 - Backup do banco:
@@ -148,9 +179,10 @@ Testes da API: `cd backend-laravel && php artisan test`
 4. Em “Minhas encomendas” vê o que está esperando e o histórico.
 
 **Regras de aviso**
-- WhatsApp quando o morador permite e há provedor configurado.
-- Email quando o morador tem email e permite, **ou sempre que o WhatsApp falhar** (fallback).
-- Toda tentativa fica registrada; o painel avisa quando algo não foi entregue.
+- WhatsApp automático quando o morador permite e há provedor configurado.
+- Sem provedor (versão gratuita), a administração avisa pelo botão **Avisar pelo meu WhatsApp** e o aviso fica registrado.
+- Email quando o morador tem email e permite, **ou sempre que o WhatsApp automático falhar ou estiver desligado** (fallback).
+- Toda tentativa fica registrada; o painel avisa quando algo não foi entregue ou quando falta avisar.
 
 ### Banco de dados
 
@@ -178,5 +210,5 @@ Autenticação por token (`Authorization: Bearer …`, Laravel Sanctum).
 | GET | `/api/my/packages` | morador aprovado |
 | GET | `/api/admin/dashboard` | administração |
 | GET / POST / PATCH / DELETE | `/api/admin/residents[/{id}]`, `…/approve`, `…/reject` | administração |
-| GET / POST / PATCH / DELETE | `/api/admin/packages[/{id}]`, `…/pickup`, `…/undo-pickup`, `…/notify` | administração |
+| GET / POST / PATCH / DELETE | `/api/admin/packages[/{id}]`, `…/pickup`, `…/undo-pickup`, `…/notify`, `…/notified-manually` | administração |
 | PATCH / POST | `/api/admin/association`, `/api/admin/association/invite-code` | administração |

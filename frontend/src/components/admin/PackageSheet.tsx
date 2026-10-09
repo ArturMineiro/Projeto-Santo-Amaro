@@ -4,7 +4,8 @@ import { fullDate, relativeDate } from "../../lib/format";
 import { useApi } from "../../lib/hooks";
 import { toast } from "../../lib/toast";
 import type { Package } from "../../lib/types";
-import { IconBell, IconCheck, IconWhatsApp } from "../Icons";
+import { IconBell, IconCheck } from "../Icons";
+import ManualWhatsAppButton from "./ManualWhatsAppButton";
 import Sheet from "../Sheet";
 import Ticket from "../Ticket";
 import { Field, Notice, Spinner } from "../ui";
@@ -115,7 +116,9 @@ function PackageDetails({ id, onClose, onChanged }: { id: number; onClose: () =>
             <ul className="mt-1 flex flex-col gap-1 text-[1rem]">
               {lastNotifications.map((n, i) => (
                 <li key={i} className={n.status === "failed" ? "text-alert" : "text-leaf-dark"}>
-                  {n.status === "sent" ? "Enviado" : "Falhou"} por {n.channel === "whatsapp" ? "WhatsApp" : "email"}{" "}
+                  {n.manual
+                    ? "Avisado pelo seu WhatsApp"
+                    : `${n.status === "sent" ? "Enviado" : "Falhou"} por ${n.channel === "whatsapp" ? "WhatsApp" : "email"}`}{" "}
                   {relativeDate(n.created_at)}
                 </li>
               ))}
@@ -193,10 +196,13 @@ function PackageDetails({ id, onClose, onChanged }: { id: number; onClose: () =>
                 Reenviar aviso
               </button>
               {pkg.whatsapp_link && (
-                <a href={pkg.whatsapp_link} target="_blank" rel="noreferrer" className="btn-whatsapp w-full">
-                  <IconWhatsApp />
-                  Avisar pelo meu WhatsApp
-                </a>
+                <ManualWhatsAppButton
+                  pkg={pkg}
+                  onRegistered={(updated) => {
+                    setOverride(updated);
+                    onChanged();
+                  }}
+                />
               )}
             </>
           ) : (

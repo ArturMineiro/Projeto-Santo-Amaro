@@ -10,6 +10,8 @@ storage/logs/*
 storage/framework/cache/data/*
 storage/framework/sessions/*
 storage/framework/views/*
+# Caches gerados localmente (com pacotes de dev, ex.: laravel/pail) quebram o artisan na imagem --no-dev
+bootstrap/cache/*.php
 database/*.sqlite
 .gradle
 bin

@@ -27,7 +27,8 @@ until php -r 'try { new PDO("mysql:host=".getenv("DB_HOST").";port=".getenv("DB_
   sleep 2
 done
 
-php artisan config:clear >/dev/null
+echo "Banco disponível."
+php artisan config:clear
 php artisan migrate --force
 
 # Dados de demonstração só na primeira vez (banco vazio) e se SEED_DEMO=true

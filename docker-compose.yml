@@ -62,8 +62,8 @@ services:
       MAIL_SCHEME: ${MAIL_SCHEME:-}
       MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-avisos@example.com}
       MAIL_FROM_NAME: ${APP_NAME:-RecebeAqui}
-      # WhatsApp: none | log | zapi | ultramsg | twilio
-      WHATSAPP_DRIVER: ${WHATSAPP_DRIVER:-log}
+      # WhatsApp: none (gratuito, botão "Avisar pelo meu WhatsApp") | log | zapi | ultramsg | twilio
+      WHATSAPP_DRIVER: ${WHATSAPP_DRIVER:-none}
       ZAPI_INSTANCE: ${ZAPI_INSTANCE:-}
       ZAPI_TOKEN: ${ZAPI_TOKEN:-}
       ZAPI_CLIENT_TOKEN: ${ZAPI_CLIENT_TOKEN:-}
@@ -89,6 +89,35 @@ services:
         condition: service_healthy
     ports:
       - "${APP_PORT:-8080}:80"
+
+  # ---------- Colocar na internet de graça (Cloudflare Tunnel) ----------
+  # Opcional. Não abre porta no roteador e já entrega HTTPS.
+  #
+  # Teste rápido, sem conta (o endereço muda a cada vez que sobe):
+  #   docker compose --profile tunel-teste up -d
+  #   docker compose logs tunnel-teste    -> procure "https://....trycloudflare.com"
+  tunnel-teste:
+    image: cloudflare/cloudflared:2026.10.0
+    profiles: ["tunel-teste"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://frontend:80
+    depends_on:
+      - frontend
+
+  # Endereço fixo (conta gratuita na Cloudflare + domínio apontado para ela):
+  #   1. Crie o túnel em one.dash.cloudflare.com > Networks > Tunnels e copie o token
+  #   2. Em "Public hostname", aponte o domínio para o serviço http://frontend:80
+  #   3. Coloque CLOUDFLARE_TUNNEL_TOKEN=... no .env e rode:
+  #      docker compose --profile tunel up -d
+  tunnel:
+    image: cloudflare/cloudflared:2026.10.0
+    profiles: ["tunel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - frontend
 
 volumes:
   db-data:

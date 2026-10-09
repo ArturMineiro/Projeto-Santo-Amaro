@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\PackageNotification;
 use App\Services\PackageMessage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -36,6 +37,7 @@ class PackageResource extends JsonResource
                 fn () => $this->notifications->map(fn ($n) => [
                     'channel' => $n->channel,
                     'status' => $n->status,
+                    'manual' => $n->provider === PackageNotification::PROVIDER_MANUAL,
                     'recipient' => $n->recipient,
                     'error' => $n->error,
                     'created_at' => $n->created_at?->toIso8601String(),

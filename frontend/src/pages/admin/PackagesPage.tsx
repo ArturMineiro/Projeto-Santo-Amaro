@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import PackageRow from "../../components/admin/PackageRow";
 import PackageSheet from "../../components/admin/PackageSheet";
 import { IconSearch } from "../../components/Icons";
@@ -8,6 +9,8 @@ import { useApi, useDebounced } from "../../lib/hooks";
 import type { Package, PackageStatus, Paginated } from "../../lib/types";
 
 export default function PackagesPage() {
+  const [params, setParams] = useSearchParams();
+  const notNotified = params.get("sem_aviso") === "1";
   const [status, setStatus] = useState<PackageStatus>("received");
   const [query, setQuery] = useState("");
   const search = useDebounced(query.trim(), 350);
@@ -16,6 +19,7 @@ export default function PackagesPage() {
   const { data, error, loading, reload } = useApi<Paginated<Package>>("/admin/packages", {
     status,
     search: search || undefined,
+    not_notified: status === "received" && notNotified ? 1 : undefined,
     per_page: 100,
   });
 
@@ -34,6 +38,18 @@ export default function PackagesPage() {
           Entregues
         </button>
       </div>
+
+      {status === "received" && (
+        <label className="mt-3 flex min-h-[48px] cursor-pointer items-center gap-3 font-bold">
+          <input
+            type="checkbox"
+            className="h-6 w-6 accent-leaf"
+            checked={notNotified}
+            onChange={(e) => setParams(e.target.checked ? { sem_aviso: "1" } : {}, { replace: true })}
+          />
+          Só as que faltam avisar
+        </label>
+      )}
 
       <div className="relative mt-3">
         <label htmlFor="package-search" className="sr-only">

@@ -58,6 +58,26 @@ class PackageNotifier
         return $this->whatsapp !== null;
     }
 
+    /**
+     * Registra que a administração avisou pelo próprio WhatsApp (botão wa.me).
+     * Não dá para confirmar a entrega, então vale o que a administração informou.
+     */
+    public function markManualWhatsApp(Package $package): PackageNotification
+    {
+        $package->loadMissing('resident');
+
+        $notification = $this->record(
+            $package,
+            PackageNotification::CHANNEL_WHATSAPP,
+            Phone::normalize($package->resident->phone),
+            PackageNotification::PROVIDER_MANUAL,
+        );
+
+        $package->forceFill(['notified_at' => now()])->save();
+
+        return $notification;
+    }
+
     private function sendWhatsApp(Package $package): PackageNotification
     {
         $phone = Phone::normalize($package->resident->phone);

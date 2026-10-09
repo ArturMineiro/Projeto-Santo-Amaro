@@ -25,6 +25,8 @@ class AssociationController extends Controller
         return response()->json([
             'waiting' => (clone $packages)->waiting()->count(),
             'waiting_over_7_days' => (clone $packages)->waiting()->where('arrived_at', '<', now()->subDays(7))->count(),
+            // Esperando e ninguém avisou o morador ainda (nem automático nem pelo WhatsApp manual)
+            'waiting_not_notified' => (clone $packages)->waiting()->whereNull('notified_at')->count(),
             'received_today' => (clone $packages)->where('arrived_at', '>=', $todayStart)->count(),
             'picked_up_today' => (clone $packages)->where('picked_up_at', '>=', $todayStart)->count(),
             'residents' => Membership::where('association_id', $association->id)->approved()->count(),
