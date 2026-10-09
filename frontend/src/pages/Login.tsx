@@ -1,76 +1,79 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { login } from "../services/auth";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useAuth } from "../auth/authContext";
+import AuthShell from "../components/AuthShell";
+import { Field, Notice } from "../components/ui";
+import { errorMessage } from "../lib/api";
+import { maskPhone } from "../lib/format";
 
 export default function Login() {
-  const navigate = useNavigate();
-
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-  });
+  const { login } = useAuth();
+  const [form, setForm] = useState({ login: "", password: "" });
+  const [error, setError] = useState("");
+  const [sending, setSending] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
+    setSending(true);
+    setError("");
     try {
-      const data = await login(form);
-
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("associationId", String(data.association.id));
-
-      navigate("/dashboard");
-    } catch (error) {
-      console.error(error);
-      alert("Erro ao fazer login.");
+      await login(form.login.trim(), form.password);
+    } catch (err) {
+      setError(errorMessage(err));
+      setSending(false);
     }
   }
 
+  // Aceita telefone (com máscara) ou email no mesmo campo
+  function onLoginChange(value: string) {
+    const looksLikePhone = /^[\d\s()+-]*$/.test(value) && value.replace(/\D/g, "").length > 0;
+    setForm({ ...form, login: looksLikePhone ? maskPhone(value) : value });
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white px-4">
-      <div className="w-full max-w-md bg-zinc-800 rounded-2xl shadow-lg p-8">
-        <h1 className="text-2xl font-semibold mb-6 text-center">
-          Bem-vindo 👋
-        </h1>
+    <AuthShell title="Suas encomendas, sem perder mensagem no grupo." intro="Quando algo chegar na associação, você recebe o aviso no WhatsApp.">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
+        <h2 className="text-[1.5rem] font-semibold">Entrar</h2>
+        {error && <Notice tone="error">{error}</Notice>}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <input
-            type="email"
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Email"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            required
-          />
+        <Field
+          label="Seu WhatsApp"
+          hint="Também pode usar seu email."
+          inputMode="tel"
+          autoComplete="username"
+          placeholder="(11) 99999-8888"
+          value={form.login}
+          onChange={(e) => onLoginChange(e.target.value)}
+          required
+        />
+        <Field
+          label="Senha"
+          type="password"
+          autoComplete="current-password"
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          required
+        />
 
-          <input
-            type="password"
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Senha"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            required
-          />
+        <button type="submit" className="btn-primary w-full" disabled={sending || !form.login || !form.password}>
+          {sending ? "Entrando…" : "Entrar"}
+        </button>
+      </form>
 
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-500 transition-colors py-3 rounded-lg font-medium"
-          >
-            Entrar
-          </button>
-        </form>
-
-        <p className="text-sm text-zinc-400 mt-6 text-center">
-          Não tem conta?{" "}
-          <Link
-            to="/cadastro-associacao"
-            className="text-blue-500 hover:underline"
-          >
-            Cadastre-se
+      <div className="mt-6 border-t border-line pt-5">
+        <p className="font-bold">Primeira vez aqui?</p>
+        <p className="text-muted">Peça o código da sua associação e faça seu cadastro.</p>
+        <Link to="/cadastro" className="btn-secondary mt-3 w-full">
+          Fazer meu cadastro
+        </Link>
+        <p className="mt-5 text-center text-[1rem] text-muted">
+          Cuida de uma associação?{" "}
+          <Link to="/criar-associacao" className="btn-link">
+            Cadastre a associação
           </Link>
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

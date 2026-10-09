@@ -11,9 +11,13 @@ return new class extends Migration {
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->string('phone')->nullable();
+            // Código curto que o morador digita para entrar na comunidade
+            $table->string('invite_code', 12)->unique();
+            $table->string('phone', 20)->nullable();
             $table->string('email')->nullable();
             $table->string('address')->nullable();
+            // Ex.: "Seg a sex, 8h às 18h" — vai junto na mensagem de aviso
+            $table->string('pickup_hours')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });

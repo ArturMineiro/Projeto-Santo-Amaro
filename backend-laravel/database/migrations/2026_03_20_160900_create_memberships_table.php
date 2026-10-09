@@ -13,14 +13,20 @@ return new class extends Migration {
             $table->foreignId('association_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
 
-            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->string('role', 20)->default('resident');      // admin | resident
+            $table->string('status', 20)->default('pending');     // pending | approved | rejected
+            // Casa / quadra / bloco / apto — texto livre, cada comunidade usa um jeito
+            $table->string('unit', 60)->nullable();
+
             $table->timestamp('approved_at')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('rejected_at')->nullable();
             $table->text('rejection_reason')->nullable();
 
             $table->timestamps();
 
             $table->unique(['association_id', 'user_id']);
+            $table->index(['association_id', 'status']);
         });
     }
 

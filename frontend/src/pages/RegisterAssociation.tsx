@@ -1,187 +1,113 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { registerAssociation } from "../services/auth";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useAuth } from "../auth/authContext";
+import AuthShell from "../components/AuthShell";
+import { Field, Notice, PhoneField } from "../components/ui";
+import api, { errorMessage, fieldErrors } from "../lib/api";
+import type { SessionResponse } from "../lib/types";
 
 export default function RegisterAssociation() {
-  const navigate = useNavigate();
-
+  const { applySession } = useAuth();
   const [form, setForm] = useState({
+    association_name: "",
+    pickup_hours: "",
+    address: "",
     name: "",
-    documentNumber: "",
-    email: "",
     phone: "",
+    email: "",
     password: "",
-    passwordConfirmation: "",
-    zipCode: "",
-    street: "",
-    number: "",
-    complement: "",
-    neighborhood: "",
-    city: "",
-    state: "",
+    password_confirmation: "",
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState("");
+  const [sending, setSending] = useState(false);
 
-  const [loading, setLoading] = useState(false);
+  const set = (key: keyof typeof form) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setLoading(true);
-
+    setSending(true);
+    setErrors({});
+    setError("");
     try {
-      const data = await registerAssociation(form);
-
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-      }
-
-      if (data.association?.id) {
-        localStorage.setItem("associationId", String(data.association.id));
-      }
-
-      navigate("/dashboard");
-    } catch (error) {
-      console.error(error);
-      alert("Erro ao cadastrar associação.");
-    } finally {
-      setLoading(false);
+      const { data } = await api.post<SessionResponse>("/auth/register-association", form);
+      applySession(data);
+    } catch (err) {
+      setErrors(fieldErrors(err));
+      setError(errorMessage(err));
+      setSending(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-900 text-white px-4 py-8">
-      <div className="w-full max-w-2xl bg-zinc-800 rounded-2xl shadow-lg p-8">
-        <h1 className="text-2xl font-semibold mb-6 text-center">
-          Cadastrar associação
-        </h1>
+    <AuthShell title="Cadastre sua associação" intro="Depois é só passar o código para os moradores.">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
+        {error && Object.keys(errors).length === 0 && <Notice tone="error">{error}</Notice>}
 
-        <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
-          <input
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 md:col-span-2"
-            placeholder="Nome da associação"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
+        <fieldset className="flex flex-col gap-5">
+          <legend className="mb-4 font-display text-[1.375rem] font-semibold">A associação</legend>
+          <Field
+            label="Nome da associação"
+            placeholder="Associação de Moradores…"
+            value={form.association_name}
+            onChange={(e) => set("association_name")(e.target.value)}
+            error={errors.association_name}
             required
           />
-
-          <input
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="CPF ou CNPJ"
-            value={form.documentNumber}
-            onChange={(e) =>
-              setForm({ ...form, documentNumber: e.target.value })
-            }
-            required
+          <Field
+            label="Horário de retirada"
+            hint="Vai junto no aviso para o morador."
+            placeholder="Seg a sex, 8h às 18h"
+            value={form.pickup_hours}
+            onChange={(e) => set("pickup_hours")(e.target.value)}
+            error={errors.pickup_hours}
           />
+          <Field label="Endereço da sede" value={form.address} onChange={(e) => set("address")(e.target.value)} error={errors.address} />
+        </fieldset>
 
-          <input
+        <fieldset className="flex flex-col gap-5 border-t border-line pt-5">
+          <legend className="mb-4 pt-5 font-display text-[1.375rem] font-semibold">Quem vai cuidar</legend>
+          <Field label="Seu nome" autoComplete="name" value={form.name} onChange={(e) => set("name")(e.target.value)} error={errors.name} required />
+          <PhoneField label="Seu WhatsApp" hint="Você entra com ele." value={form.phone} onChange={set("phone")} error={errors.phone} required />
+          <Field
+            label="Email (se tiver)"
             type="email"
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Email"
+            autoComplete="email"
             value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            required
+            onChange={(e) => set("email")(e.target.value)}
+            error={errors.email}
           />
-
-          <input
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Telefone"
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            required
-          />
-
-          <input
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="CEP"
-            value={form.zipCode}
-            onChange={(e) => setForm({ ...form, zipCode: e.target.value })}
-            required
-          />
-
-          <input
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 md:col-span-2"
-            placeholder="Rua"
-            value={form.street}
-            onChange={(e) => setForm({ ...form, street: e.target.value })}
-            required
-          />
-
-          <input
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Número"
-            value={form.number}
-            onChange={(e) => setForm({ ...form, number: e.target.value })}
-            required
-          />
-
-          <input
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Complemento"
-            value={form.complement}
-            onChange={(e) => setForm({ ...form, complement: e.target.value })}
-          />
-
-          <input
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Bairro"
-            value={form.neighborhood}
-            onChange={(e) => setForm({ ...form, neighborhood: e.target.value })}
-            required
-          />
-
-          <input
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Cidade"
-            value={form.city}
-            onChange={(e) => setForm({ ...form, city: e.target.value })}
-            required
-          />
-
-          <input
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 md:col-span-2"
-            placeholder="Estado"
-            value={form.state}
-            onChange={(e) => setForm({ ...form, state: e.target.value })}
-            required
-          />
-
-          <input
+          <Field
+            label="Crie uma senha"
+            hint="Pelo menos 6 letras ou números."
             type="password"
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Senha"
+            autoComplete="new-password"
             value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            onChange={(e) => set("password")(e.target.value)}
+            error={errors.password}
             required
           />
-
-          <input
+          <Field
+            label="Repita a senha"
             type="password"
-            className="px-4 py-3 rounded-lg bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Confirmar senha"
-            value={form.passwordConfirmation}
-            onChange={(e) =>
-              setForm({ ...form, passwordConfirmation: e.target.value })
-            }
+            autoComplete="new-password"
+            value={form.password_confirmation}
+            onChange={(e) => set("password_confirmation")(e.target.value)}
             required
           />
+        </fieldset>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="md:col-span-2 bg-blue-600 hover:bg-blue-500 transition-colors py-3 rounded-lg font-medium disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {loading ? "Cadastrando..." : "Cadastrar"}
-          </button>
-        </form>
-
-        <p className="text-sm text-zinc-400 mt-6 text-center">
-          Já tem conta?{" "}
-          <Link to="/" className="text-blue-500 hover:underline">
+        <button type="submit" className="btn-primary w-full" disabled={sending}>
+          {sending ? "Criando…" : "Criar associação"}
+        </button>
+        <p className="text-center text-[1rem] text-muted">
+          Já tem cadastro?{" "}
+          <Link to="/" className="btn-link">
             Entrar
           </Link>
         </p>
-      </div>
-    </div>
+      </form>
+    </AuthShell>
   );
 }

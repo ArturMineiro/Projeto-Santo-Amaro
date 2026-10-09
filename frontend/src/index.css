@@ -1,3 +1,170 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-paper font-sans text-base text-ink antialiased;
+    min-height: 100dvh;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-ink;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 3px solid #154d38;
+    outline-offset: 2px;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+  }
+}
+
+@layer components {
+  /* ---------- Botões: alvo de toque mínimo de 56px ---------- */
+  .btn {
+    @apply inline-flex min-h-[56px] items-center justify-center gap-2 rounded-btn px-5 text-[1.125rem] font-bold leading-tight transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-primary {
+    @apply btn bg-leaf text-white hover:bg-leaf-dark;
+  }
+  .btn-secondary {
+    @apply btn border-2 border-line bg-white text-ink hover:border-leaf;
+  }
+  .btn-danger {
+    @apply btn border-2 border-alert/30 bg-white text-alert hover:border-alert;
+  }
+  .btn-whatsapp {
+    @apply btn bg-[#1F7A47] text-white hover:bg-[#17603A];
+  }
+  .btn-link {
+    @apply inline-flex min-h-[44px] items-center gap-1 font-bold text-leaf underline decoration-2 underline-offset-4 hover:text-leaf-dark;
+  }
+  .icon-btn {
+    @apply inline-flex h-12 w-12 items-center justify-center rounded-full text-ink hover:bg-leaf-soft;
+  }
+
+  /* ---------- Campos ---------- */
+  .label {
+    @apply mb-1.5 block font-bold text-ink;
+  }
+  .input {
+    @apply block min-h-[56px] w-full rounded-[12px] border-2 border-line bg-white px-4 text-[1.125rem] text-ink placeholder:text-muted/70 focus:border-leaf focus:outline-none;
+  }
+  .input[aria-invalid="true"] {
+    @apply border-alert;
+  }
+  textarea.input {
+    @apply py-3;
+  }
+
+  .card {
+    @apply rounded-card border border-line bg-white;
+  }
+
+  /* ---------- Abas segmentadas ---------- */
+  .tabs {
+    @apply grid grid-flow-col gap-1 rounded-btn bg-leaf-soft p-1;
+    grid-auto-columns: 1fr;
+  }
+  .tab {
+    @apply min-h-[48px] rounded-[10px] px-3 font-bold text-leaf-dark;
+  }
+  .tab[aria-selected="true"] {
+    @apply bg-white text-ink shadow-[0_1px_0_#D5DFD7];
+  }
+
+  /* ---------- O ticket de retirada (elemento-assinatura) ---------- */
+  .ticket {
+    @apply relative flex overflow-hidden rounded-card border border-line bg-white;
+  }
+  .ticket-stub {
+    @apply relative flex w-[104px] shrink-0 flex-col items-center justify-center bg-sun px-2 py-4 text-center text-ink;
+    border-left: 3px dashed rgba(29, 43, 36, 0.35);
+  }
+  .ticket-stub::before,
+  .ticket-stub::after {
+    content: "";
+    @apply absolute h-5 w-5 rounded-full bg-paper;
+    left: -11px;
+  }
+  .ticket-stub::before {
+    top: -10px;
+  }
+  .ticket-stub::after {
+    bottom: -10px;
+  }
+  .ticket-code {
+    @apply font-display text-[2rem] font-extrabold leading-none tracking-[0.08em];
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Folha inferior (dialog nativo) ---------- */
+  dialog.sheet {
+    @apply m-0 mt-auto w-full max-w-none bg-white p-0 text-ink;
+    max-height: 92dvh;
+    border-radius: 24px 24px 0 0;
+    inset: auto 0 0 0;
+  }
+  @media (min-width: 640px) {
+    dialog.sheet {
+      @apply mx-auto mb-6 max-w-xl;
+      border-radius: 24px;
+      inset: auto 0 0 0;
+    }
+  }
+  dialog.sheet[open] {
+    animation: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  dialog.sheet::backdrop {
+    background: rgba(29, 43, 36, 0.5);
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+
+/* Único momento coreografado: o ticket "carimbado" após registrar */
+@keyframes stamp {
+  0% {
+    transform: scale(1.12) rotate(-3deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(0.98) rotate(0.5deg);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+  }
+}
+.stamp-in {
+  animation: stamp 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
